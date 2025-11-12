@@ -2,9 +2,10 @@ package hubz.core.operations;
 
 import hubz.core.exception.InvalidCommitMessageException;
 import hubz.core.exception.RepositoryNotFoundException;
-import hubz.core.model.OperationResult;
-import hubz.core.service.commit.CommitService;
+import hubz.model.OperationResult;
+import hubz.core.service.commitservice.CommitService;
 
+//Execute commit operation
 public class CommitOperation implements Operation{
     @Override
     public OperationResult execute(String args) {

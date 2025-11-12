@@ -1,8 +1,9 @@
-package hubz.core;
+package hubz.context;
 
 import java.io.File;
 
-public class HubZContext {
+//Global context storing Root directory, author name
+public class HubzContext {
 
     private static File rootDir;
     private static boolean isInitialized = false;

@@ -1,27 +1,32 @@
-package hubz.core;
+package hubz.cli;
 
-import hubz.core.io.Serializer;
-import hubz.core.model.OperationResult;
-import hubz.core.model.metamodel.MetaModel;
-import hubz.core.operations.*;
-import hubz.core.printer.ConsolePrinter;
-import hubz.core.util.HubZPath;
+import hubz.context.HubzContext;
+import hubz.io.JsonSerializer;
+import hubz.model.OperationResult;
+import hubz.model.metamodel.MetaModel;
+import hubz.core.operations.CommitOperation;
+import hubz.core.operations.HelpOperation;
+import hubz.core.operations.InitOperation;
+import hubz.core.operations.Operation;
+import hubz.util.HubzPath;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.Scanner;
 
-public class HubZEngine {
+public class HubzEngine {
 
     public static final ConsolePrinter printer = new ConsolePrinter();
     private final Scanner scanner = new Scanner(System.in);
 
+    //Get command, parse arguments and set context
     public void start() {
         printer.printBanner();
         printer.info("Welcome to HubZ - Java Version Control System\n");
 
         askForBaseDir();
         setAuthorNameIfExist();
+
         while (true) {
             printer.prompt();
             String input = scanner.nextLine().trim();
@@ -33,9 +38,11 @@ public class HubZEngine {
         }
     }
 
+    //Call respective operations to execute
     private void handleCommand(String input) {
         if (input.isEmpty()) return;
 
+        //Spilt into input into (command + message/args)
         String[] parts = input.trim().split("\\s+", 2);
         String command = parts[0].toLowerCase();
         String args = (parts.length > 1) ? parts[1].trim() : null;
@@ -49,7 +56,7 @@ public class HubZEngine {
                 break;
 
             case "reset":
-                resetBaseDirectory();
+                resetRootDirectory();
                 return;
 
             case "help":
@@ -73,14 +80,16 @@ public class HubZEngine {
             printer.warn(result.getMessage());
     }
 
+    // Set author name at context
     private void setAuthorNameIfExist(){
-        File rootDir = HubZContext.getRootDir();
-        File metaFile = new File(rootDir, HubZPath.META_FILE);
+        File rootDir = HubzContext.getRootDir();
+        File metaFile = new File(rootDir, HubzPath.META_FILE);
         try {
+            //Load author name from meta file if exist
             if (metaFile.exists()) {
-                MetaModel meta = Serializer.readJsonFile(metaFile, MetaModel.class);
+                MetaModel meta = JsonSerializer.readJsonFile(metaFile, MetaModel.class);
                 if(meta != null && meta.getAuthor() != null && !meta.getAuthor().trim().isEmpty()){
-                    HubZContext.setAuthor(meta.getAuthor());
+                    HubzContext.setAuthor(meta.getAuthor());
                     printer.info("Author loaded from repository: " + meta.getAuthor());
                     return;
                 }
@@ -89,6 +98,7 @@ public class HubZEngine {
            printer.warn("Could not read meta.json to set author name");
         }
 
+        //If meta file did not exist, then author name from user and set it in context
         printer.info("Enter your author name (this will be stored in repository metadata):");
         printer.prompt();
         String author = scanner.nextLine().trim();
@@ -99,12 +109,13 @@ public class HubZEngine {
             author = scanner.nextLine().trim();
         }
 
-        HubZContext.setAuthor(author);
+        HubzContext.setAuthor(author);
         printer.info("Author saved as: " + author);
     }
 
+    //Set root directory at context, if path did not exist ask user to create it
     private void askForBaseDir() {
-        while (!HubZContext.isInitialized()) {
+        while (!HubzContext.isInitialized()) {
             printer.info("Please enter your project root directory (example: D:\\Projects\\MyApp):");
             printer.prompt();
             String path = scanner.nextLine().trim();
@@ -115,8 +126,8 @@ public class HubZEngine {
             }
 
             try {
-                HubZContext.setRootDir(path);
-                printer.info("Base directory set to: " + HubZContext.getRootDir().getAbsolutePath());
+                HubzContext.setRootDir(path);
+                printer.info("Base directory set to: " + HubzContext.getRootDir().getAbsolutePath());
             } catch (IllegalArgumentException e) {
                 printer.warn("Invalid directory: " + e.getMessage());
                 printer.info("Please enter a valid existing path (absolute path recommended).");
@@ -124,7 +135,8 @@ public class HubZEngine {
         }
     }
 
-    private void resetBaseDirectory() {
+    //Reset root directory at context
+    private void resetRootDirectory() {
         printer.info("Enter a new base/root directory path:");
         printer.prompt();
 
@@ -135,9 +147,9 @@ public class HubZEngine {
             return;
         }
         try {
-            HubZContext.setRootDir(newPath);
+            HubzContext.setRootDir(newPath);
             printer.info("Base directory successfully reset to: " +
-                    HubZContext.getRootDir().getAbsolutePath());
+                    HubzContext.getRootDir().getAbsolutePath());
         } catch (IllegalArgumentException e) {
             printer.warn("Invalid directory: " + e.getMessage());
             printer.info("Please enter a valid existing path (absolute path recommended).");

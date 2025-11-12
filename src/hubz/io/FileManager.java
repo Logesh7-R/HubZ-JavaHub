@@ -1,13 +1,13 @@
-package hubz.core.util;
+package hubz.io;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.*;
 
-public class FileUtil {
+public class FileManager {
 
-    private FileUtil() {}
+    private FileManager() {}
 
     public static void createDir(String dirPath) throws IOException {
         File dir = new File(dirPath);
@@ -40,13 +40,6 @@ public class FileUtil {
         }
     }
 
-    public static void deleteFile(String filePath) {
-        File file = new File(filePath);
-        if (file.exists() && !file.delete()) {
-            System.err.println("Warning: Failed to delete file: " + filePath);
-        }
-    }
-
     public static boolean exists(String path) {
         return new File(path).exists();
     }
@@ -76,12 +69,6 @@ public class FileUtil {
                     target.toPath(),
                     StandardCopyOption.REPLACE_EXISTING,
                     StandardCopyOption.ATOMIC_MOVE
-            );
-        } catch (AtomicMoveNotSupportedException e) {
-            Files.move(
-                    tempFile.toPath(),
-                    target.toPath(),
-                    StandardCopyOption.REPLACE_EXISTING
             );
         } finally {
             if (tempFile.exists()) {

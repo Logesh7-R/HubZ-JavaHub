@@ -1,4 +1,4 @@
-package hubz.core.model;
+package hubz.model;
 
 public class OperationResult {
     private boolean success;

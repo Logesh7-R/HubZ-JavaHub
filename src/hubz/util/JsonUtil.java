@@ -1,4 +1,4 @@
-package hubz.core.util;
+package hubz.util;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;

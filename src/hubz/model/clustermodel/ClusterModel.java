@@ -1,4 +1,4 @@
-package hubz.core.model.clustermodel;
+package hubz.model.clustermodel;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -1,4 +1,4 @@
-package hubz.core.model.clustermodel;
+package hubz.model.clustermodel;
 
 public class SnapshotInfo {
     private String commit;

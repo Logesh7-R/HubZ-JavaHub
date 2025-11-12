@@ -1,4 +1,4 @@
-package hubz.core.model.treemodel;
+package hubz.model.treemodel;
 
 import java.util.LinkedHashMap;
 import java.util.Map;

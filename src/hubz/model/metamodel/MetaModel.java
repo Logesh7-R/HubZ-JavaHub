@@ -1,4 +1,4 @@
-package hubz.core.model.metamodel;
+package hubz.model.metamodel;
 
 public class MetaModel {
     private int commitCount;

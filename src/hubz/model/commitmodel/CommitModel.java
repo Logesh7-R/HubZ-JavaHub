@@ -1,6 +1,6 @@
-package hubz.core.model.commitmodel;
+package hubz.model.commitmodel;
 
-import hubz.core.HubZContext;
+import hubz.context.HubzContext;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -10,7 +10,7 @@ public class CommitModel {
     private String parent;
     private String tree;
     private String message;
-    private String author = HubZContext.getAuthor();
+    private String author = HubzContext.getAuthor();
     private String timestamp;
     private int commitNumber;
     private Map<String, String> deletedFiles = new LinkedHashMap<>();

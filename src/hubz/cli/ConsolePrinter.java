@@ -1,4 +1,4 @@
-package hubz.core.printer;
+package hubz.cli;
 
 public class ConsolePrinter {
 

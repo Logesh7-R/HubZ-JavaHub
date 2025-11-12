@@ -1,4 +1,4 @@
-package hubz.core.model.indexmodel;
+package hubz.model.indexmodel;
 
 import java.util.LinkedHashMap;
 import java.util.Map;

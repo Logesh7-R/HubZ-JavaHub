@@ -1,4 +1,4 @@
-package hubz.core.util;
+package hubz.util;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;

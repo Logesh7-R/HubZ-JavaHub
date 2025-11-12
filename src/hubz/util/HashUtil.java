@@ -1,4 +1,4 @@
-package hubz.core.util;
+package hubz.util;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;

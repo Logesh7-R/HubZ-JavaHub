@@ -1,7 +1,8 @@
 package hubz.core.operations;
 
-import hubz.core.model.OperationResult;
+import hubz.model.OperationResult;
 
+//Execute help operation
 public class HelpOperation implements Operation {
 
     @Override
