@@ -1,14 +1,17 @@
 package hubz.io;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import hubz.context.HubzContext;
+import hubz.util.HubzPath;
+
+import java.io.*;
 import java.nio.file.*;
 
+//Handle file and directory CRUD operations
 public class FileManager {
 
     private FileManager() {}
 
+    //Creating directory
     public static void createDir(String dirPath) throws IOException {
         File dir = new File(dirPath);
         if (!dir.exists() && !dir.mkdirs()) {
@@ -16,6 +19,7 @@ public class FileManager {
         }
     }
 
+    //Create file with specified content
     public static void createFile(String filePath, String content) throws IOException {
         File file = new File(filePath);
 
@@ -30,8 +34,21 @@ public class FileManager {
         }
     }
 
+    //Buffer reader for files
     public static String readFile(String filePath) throws IOException {
-        return new String(Files.readAllBytes(Paths.get(filePath)));
+        StringBuilder content = new StringBuilder();
+
+        try (BufferedReader reader = new BufferedReader(
+                new InputStreamReader(new FileInputStream(filePath)))) {
+
+            String line;
+            while ((line = reader.readLine()) != null) {
+                content.append(line);
+                content.append(System.lineSeparator());
+            }
+        }
+
+        return content.toString();
     }
 
     public static void writeFile(String filePath, String content) throws IOException {
@@ -44,15 +61,15 @@ public class FileManager {
         return new File(path).exists();
     }
 
+    //Atomic write will perform using temp folder
     public static void atomicWrite(File target, String content) throws IOException {
-        File parentDir = target.getParentFile();
-        if (parentDir != null && !parentDir.exists()) {
-            if (!parentDir.mkdirs()) {
-                throw new IOException("Failed to create parent directories for: " + target.getAbsolutePath());
-            }
+        File tempDir = new File(HubzContext.getRootDir(), HubzPath.TEMP_DIR);
+
+        if (!tempDir.exists() && !tempDir.mkdirs()) {
+            throw new IOException("Failed to create temp directory: " + tempDir.getAbsolutePath());
         }
 
-        File tempFile = new File(parentDir != null ? parentDir : new File("."), target.getName() + ".tmp");
+        File tempFile = new File(tempDir, target.getName() + ".tmp");
 
         if (tempFile.exists() && !tempFile.delete()) {
             throw new IOException("Failed to delete existing temp file: " + tempFile.getAbsolutePath());
@@ -60,7 +77,6 @@ public class FileManager {
 
         try (FileWriter writer = new FileWriter(tempFile)) {
             writer.write(content);
-            writer.flush();
         }
 
         try {

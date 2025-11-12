@@ -1,9 +1,9 @@
 package hubz.model.clustermodel;
 
 public class SnapshotInfo {
-    private String commit;
-    private String path;        //snapshots/index-100.json
-    private String timestamp;
+    private String commit;//commit hash
+    private String path;//snapshots/index-100.json
+    private String timestamp;//TimeStamp
 
     public SnapshotInfo() {}
 

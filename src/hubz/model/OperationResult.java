@@ -4,6 +4,7 @@ public class OperationResult {
     private boolean success;
     private String message;
 
+    //Output format for every operation result
     public OperationResult() {}
 
     public OperationResult(boolean success, String message) {

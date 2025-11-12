@@ -8,9 +8,9 @@ public class MetaModel {
     public MetaModel() {}
 
     public MetaModel(int commitCount, String branch,String author) {
-        this.commitCount = commitCount;
-        this.branch = branch;
-        this.author = author;
+        this.commitCount = commitCount; //Commit count so far
+        this.branch = branch; //Current Working branch
+        this.author = author; // Current working author name
     }
 
     public int getCommitCount() {

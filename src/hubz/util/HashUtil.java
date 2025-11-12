@@ -12,6 +12,7 @@ public class HashUtil {
 
     private HashUtil(){}
 
+    //Used to Hash content of the String
     public static String sha256String(String input){
         try {
             MessageDigest md = MessageDigest.getInstance("SHA-256");
@@ -22,6 +23,7 @@ public class HashUtil {
         }
     }
 
+    //Used to Hash content of the File
     public static String sha256File(String filePath) throws IOException{
         try{
             MessageDigest md = MessageDigest.getInstance("SHA-256");
@@ -40,6 +42,7 @@ public class HashUtil {
         }
     }
 
+    //Convert byte[] hash to hexadecimal hash
     public static String bytesToHex(byte[] hashBytes){
         StringBuilder hex = new StringBuilder();
         for(byte b:hashBytes){

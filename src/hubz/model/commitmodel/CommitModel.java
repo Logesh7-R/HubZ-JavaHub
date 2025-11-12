@@ -6,14 +6,14 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class CommitModel {
-    transient private String hash;
-    private String parent;
-    private String tree;
-    private String message;
-    private String author = HubzContext.getAuthor();
-    private String timestamp;
-    private int commitNumber;
-    private Map<String, String> deletedFiles = new LinkedHashMap<>();
+    transient private String hash; // Commit hash
+    private String parent; //Parent commit hash
+    private String tree; //Tree hash
+    private String message; //Commit message
+    private String author = HubzContext.getAuthor(); //Author name
+    private String timestamp;//Timestamp yyyy-mm-dd't'hh-mm-ss
+    private int commitNumber; //Current commit count
+    private Map<String, String> deletedFiles = new LinkedHashMap<>(); //Relative path and absolute path of deleted file
 
     public CommitModel() {}
 

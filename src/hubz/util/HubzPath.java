@@ -2,6 +2,7 @@ package hubz.util;
 
 import java.io.File;
 
+//.hubz folder structure
 public class HubzPath {
 
     private HubzPath() {
@@ -26,6 +27,7 @@ public class HubzPath {
     public static final String SNAPSHOTS_DIR = HUBZ_DIR + File.separator + "snapshots";
     public static final String TEMP_DIR = HUBZ_DIR + File.separator + "temp";
 
+    //Used to get snapshotFile name
     public static String getSnapshotFileName(int commitCount) {
         return SNAPSHOTS_DIR + File.separator + "index-" + commitCount + ".json";
     }

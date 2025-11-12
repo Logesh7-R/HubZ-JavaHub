@@ -13,14 +13,20 @@ public class JsonUtil {
 
     private JsonUtil() {}
 
+    //Object to String Json
+    //Serialization
     public static String toJson(Object obj) {
         return gson.toJson(obj);
     }
 
+    //String json to particular class type like CommitModel, TreeModel.
+    //Deserialization
     public static <T> T fromJson(String json, Class<T> clazz) {
         return gson.fromJson(json, clazz);
     }
 
+    //String json to complex class type like List<Map<String,String>>
+    //Deserialization
     public static <T> T fromJson(String json, Type typeOfT) {
         return gson.fromJson(json, typeOfT);
     }
