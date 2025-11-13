@@ -12,6 +12,7 @@ import hubz.util.HubzPath;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 import java.util.Scanner;
 
 public class HubzEngine {
@@ -80,38 +81,81 @@ public class HubzEngine {
             printer.warn(result.getMessage());
     }
 
-    // Set author name at context
-    private void setAuthorNameIfExist(){
+
+    private void setAuthorNameIfExist() {
         File rootDir = HubzContext.getRootDir();
         File metaFile = new File(rootDir, HubzPath.META_FILE);
-        try {
-            //Load author name from meta file if exist
-            if (metaFile.exists()) {
+
+        // try load meta.json
+        if (metaFile.exists()) {
+            try {
                 MetaModel meta = JsonSerializer.readJsonFile(metaFile, MetaModel.class);
-                if(meta != null && meta.getAuthor() != null && !meta.getAuthor().trim().isEmpty()){
-                    HubzContext.setAuthor(meta.getAuthor());
-                    printer.info("Author loaded from repository: " + meta.getAuthor());
-                    return;
+                if (meta != null && meta.getAuthors() != null && !meta.getAuthors().isEmpty()) {
+                    HubzContext.setAllAuthorsFromList(meta.getAuthors());
+                }
+
+            } catch (IOException e) {
+                printer.warn("Could not read meta.json to set author name");
+            }
+        }
+
+        // loop until author is set
+        while (HubzContext.getAuthor() == null) {
+            List<String> authorNames = HubzContext.getAllAuthorsAsList();
+
+            if (!authorNames.isEmpty()) {
+                printer.info("Select option:");
+                printer.info("  1) Use existing author");
+                printer.info("  2) Enter new author");
+                printer.prompt();
+                String line = scanner.nextLine().trim();
+                int mode = 0;
+                try { mode = Integer.parseInt(line); } catch (NumberFormatException ignored) {}
+
+                if (mode == 1) {
+                    printer.info("Select author by id:");
+                    for (int i = 0; i < authorNames.size(); i++) {
+                        printer.info((i + 1) + "\t" + authorNames.get(i));
+                    }
+                    printer.prompt();
+                    String sel = scanner.nextLine().trim();
+                    int id = -1;
+                    try { id = Integer.parseInt(sel); } catch (NumberFormatException ignored) {}
+                    if (id >= 1 && id <= authorNames.size()) {
+                        String chosen = authorNames.get(id - 1);
+                        HubzContext.setAuthor(chosen);
+                        printer.info("Selected author: " + chosen);
+                        break;
+                    } else {
+                        printer.warn("Invalid selection. Try again.");
+                        continue;
+                    }
+                } else if (mode == 2) {
+
+                } else {
+                    printer.warn("Invalid selection. Try again.");
+                    continue;
                 }
             }
-        } catch (IOException e) {
-           printer.warn("Could not read meta.json to set author name");
-        }
 
-        //If meta file did not exist, then author name from user and set it in context
-        printer.info("Enter your author name (this will be stored in repository metadata):");
-        printer.prompt();
-        String author = scanner.nextLine().trim();
-
-        while(author.isEmpty()){
-            printer.warn("Author name cannot be empty. Please enter again:");
+            // Ask for new author
+            printer.info("Enter your author name (this will be stored in repository metadata):");
             printer.prompt();
-            author = scanner.nextLine().trim();
+            String author = scanner.nextLine().trim();
+            if (author.isEmpty()) {
+                printer.warn("Author name cannot be empty. Please enter again.");
+                continue;
+            }
+            author = author.toLowerCase();
+            if(authorNames.contains(author)){
+                printer.warn("Author name is already existed. Please enter again.");
+                continue;
+            }
+            HubzContext.setAuthor(author);
+            printer.info("Author saved as: " + author);
         }
-
-        HubzContext.setAuthor(author);
-        printer.info("Author saved as: " + author);
     }
+
 
     //Set root directory at context, if path did not exist ask user to create it
     private void askForBaseDir() {

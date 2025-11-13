@@ -1,39 +1,37 @@
 package hubz.model.metamodel;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class MetaModel {
-    private int commitCount;
+    private int commitCount = 0;
     private String branch;
-    private String author;
+    private List<String> authors = new ArrayList<>();
 
     public MetaModel() {}
 
-    public MetaModel(int commitCount, String branch,String author) {
-        this.commitCount = commitCount; //Commit count so far
-        this.branch = branch; //Current Working branch
-        this.author = author; // Current working author name
-    }
-
-    public int getCommitCount() {
-        return commitCount;
-    }
-
-    public void setCommitCount(int commitCount) {
+    public MetaModel(int commitCount, String branch, List<String> authors) {
         this.commitCount = commitCount;
-    }
-
-    public String getBranch() {
-        return branch;
-    }
-
-    public void setBranch(String branch) {
         this.branch = branch;
+        this.authors = authors != null ? authors : new ArrayList<>();
+
     }
 
-    public String getAuthor() {
-        return author;
+    public int getCommitCount() { return commitCount; }
+
+    public void setCommitCount(int commitCount) { this.commitCount = commitCount; }
+
+    public String getBranch() { return branch; }
+
+    public void setBranch(String branch) { this.branch = branch; }
+
+    public List<String> getAuthors() { return authors; }
+
+    public void setAuthors(List<String> authors) { this.authors = authors; }
+
+    public void addAuthor(String author) {
+        if (author == null) return;
+        if (!this.authors.contains(author)) this.authors.add(author);
     }
 
-    public void setAuthor(String author) {
-        this.author = author;
-    }
 }

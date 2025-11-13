@@ -44,12 +44,20 @@ public class CommitService {
             //Get Meta File
             MetaModel meta;
             File metaFile = new File(rootDir, HubzPath.META_FILE);
-            if(!metaFile.exists()){
-                meta = new MetaModel(0,"main", HubzContext.getAuthor());
+            if (!metaFile.exists()) {
+                meta = new MetaModel();
+                meta.setAuthors(HubzContext.getAllAuthorsAsList());
             } else {
                 meta = JsonSerializer.readJsonFile(metaFile, MetaModel.class);
-                if(meta == null) meta = new MetaModel(0,"main", HubzContext.getAuthor());
+                if (meta == null) meta = new MetaModel();
+                // sync meta authors with context (context takes precedence)
+                if (!HubzContext.getAllAuthorsAsList().isEmpty()) {
+                    meta.setAuthors(HubzContext.getAllAuthorsAsList());
+                } else if (meta.getAuthors() != null && !meta.getAuthors().isEmpty()) {
+                    HubzContext.setAllAuthorsFromList(meta.getAuthors());
+                }
             }
+
             //Get Old Index File
             IndexModel oldIndex;
             File oldIndexFile = new File(rootDir, HubzPath.INDEX_FILE);

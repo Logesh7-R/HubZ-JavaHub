@@ -3,10 +3,14 @@ package hubz.core.service.initservice;
 import hubz.context.HubzContext;
 import hubz.core.exception.RepositoryInitException;
 import hubz.io.FileManager;
+import hubz.io.JsonSerializer;
+import hubz.model.metamodel.MetaModel;
 import hubz.util.HubzPath;
+import hubz.util.JsonUtil;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 
 public class RepoInitializer {
 
@@ -26,7 +30,14 @@ public class RepoInitializer {
             FileManager.createFile(new File(rootDir, HubzPath.GRAPH_FILE).getAbsolutePath(), "{}");
             FileManager.createFile(new File(rootDir, HubzPath.INDEX_FILE).getAbsolutePath(), "{}");
             FileManager.createFile(new File(rootDir, HubzPath.CLUSTER_FILE).getAbsolutePath(), "{\"snapshots\": []}");
-            FileManager.createFile(new File(rootDir, HubzPath.META_FILE).getAbsolutePath(), "{\"commitCount\": 0, \"branch\": \"main\", \"author\":\""+ HubzContext.getAuthor() +"\"}");
+
+
+            MetaModel meta = new MetaModel();
+            meta.setCommitCount(0);
+            meta.setBranch("main");
+            meta.setAuthors(HubzContext.getAllAuthorsAsList());
+
+            FileManager.createFile(new File(rootDir, HubzPath.META_FILE).getAbsolutePath(), JsonUtil.toJson(meta));
 
             FileManager.createFile(new File(rootDir, HubzPath.HEAD_FILE).getAbsolutePath(), "ref: refs" + File.separator + "branches" + File.separator + "main");
             FileManager.createFile(base + File.separator + "refs" + File.separator + "branches" + File.separator + "main", "");

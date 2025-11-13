@@ -90,6 +90,8 @@ public class JsonSerializer {
         FileManager.atomicWrite(metaFile, json);
     }
 
+//    public static Map<String, > getGraph
+
     //Appending new parent and child hash.
     //Child hash : [parent hashes]
     public static void updateGraph(String commitHash, String parentHash) throws IOException {
