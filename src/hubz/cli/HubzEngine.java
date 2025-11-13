@@ -1,13 +1,10 @@
 package hubz.cli;
 
 import hubz.context.HubzContext;
+import hubz.core.operations.*;
 import hubz.io.JsonSerializer;
 import hubz.model.OperationResult;
 import hubz.model.metamodel.MetaModel;
-import hubz.core.operations.CommitOperation;
-import hubz.core.operations.HelpOperation;
-import hubz.core.operations.InitOperation;
-import hubz.core.operations.Operation;
 import hubz.util.HubzPath;
 
 import java.io.File;
@@ -26,7 +23,7 @@ public class HubzEngine {
         printer.info("Welcome to HubZ - Java Version Control System\n");
 
         askForBaseDir();
-        setAuthorNameIfExist();
+        setAuthorAndBranchNameIfExist();
 
         while (true) {
             printer.prompt();
@@ -68,6 +65,10 @@ public class HubzEngine {
                 operation = new CommitOperation();
                 break;
 
+            case "log":
+                operation = new LogOperation();
+                break;
+
             default:
                 printer.warn("Unknown command: " + command);
                 printer.info("Type 'help' to see available commands");
@@ -82,25 +83,30 @@ public class HubzEngine {
     }
 
 
-    private void setAuthorNameIfExist() {
+    private void setAuthorAndBranchNameIfExist() {
         File rootDir = HubzContext.getRootDir();
         File metaFile = new File(rootDir, HubzPath.META_FILE);
 
-        // try load meta.json
+        // try to load meta.json
         if (metaFile.exists()) {
             try {
                 MetaModel meta = JsonSerializer.readJsonFile(metaFile, MetaModel.class);
                 if (meta != null && meta.getAuthors() != null && !meta.getAuthors().isEmpty()) {
                     HubzContext.setAllAuthorsFromList(meta.getAuthors());
                 }
+                if(meta != null && meta.getBranch() != null && !meta.getBranch().trim().isEmpty()){
+                    HubzContext.setCurrentBranchName(meta.getBranch());
+                    printer.info("Current Branch: "+HubzContext.getCurrentBranchName());
+                }
 
             } catch (IOException e) {
-                printer.warn("Could not read meta.json to set author name");
+                printer.warn("Could not read meta.json to set author and branch name");
             }
         }
 
         // loop until author is set
-        while (HubzContext.getAuthor() == null) {
+        while (HubzContext.getAuthor() == null || HubzContext.getAuthor().trim().isEmpty())
+        {
             List<String> authorNames = HubzContext.getAllAuthorsAsList();
 
             if (!authorNames.isEmpty()) {
@@ -114,8 +120,9 @@ public class HubzEngine {
 
                 if (mode == 1) {
                     printer.info("Select author by id:");
+                    printer.info("Id - Name");
                     for (int i = 0; i < authorNames.size(); i++) {
-                        printer.info((i + 1) + "\t" + authorNames.get(i));
+                        printer.info((i + 1) + " - " + authorNames.get(i));
                     }
                     printer.prompt();
                     String sel = scanner.nextLine().trim();
@@ -146,8 +153,10 @@ public class HubzEngine {
                 printer.warn("Author name cannot be empty. Please enter again.");
                 continue;
             }
-            author = author.toLowerCase();
-            if(authorNames.contains(author)){
+            for(int i = 0; i<authorNames.size();i++){
+                authorNames.set(i,authorNames.get(i).toLowerCase());
+            }
+            if(authorNames.contains(author.toLowerCase())){
                 printer.warn("Author name is already existed. Please enter again.");
                 continue;
             }

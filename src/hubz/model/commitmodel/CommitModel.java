@@ -3,6 +3,8 @@ package hubz.model.commitmodel;
 import hubz.context.HubzContext;
 
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 
 public class CommitModel {
@@ -12,8 +14,9 @@ public class CommitModel {
     private String message; //Commit message
     private String author = HubzContext.getAuthor(); //Author name
     private String timestamp;//Timestamp yyyy-mm-dd't'hh-mm-ss
+    private String branchName;//Current branch name
     private int commitNumber; //Current commit count
-    private Map<String, String> deletedFiles = new LinkedHashMap<>(); //Relative path and absolute path of deleted file
+    private List<String> deletedFiles = new LinkedList<>(); //Relative path of deleted file
 
     public CommitModel() {}
 
@@ -73,11 +76,15 @@ public class CommitModel {
         this.commitNumber = commitNumber;
     }
 
-    public Map<String, String> getDeletedFiles() {
+    public List<String> getDeletedFiles() {
         return deletedFiles;
     }
 
-    public void setDeletedFiles(Map<String, String> deletedFiles) {
+    public void setDeletedFiles(List<String> deletedFiles) {
         this.deletedFiles = deletedFiles;
     }
+
+    public void setBranchName(String branchName){ this.branchName = branchName; }
+
+    public String getBranchName(){ return branchName; }
 }

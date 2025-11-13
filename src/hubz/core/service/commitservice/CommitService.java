@@ -3,6 +3,7 @@ package hubz.core.service.commitservice;
 import hubz.context.HubzContext;
 import hubz.core.exception.InvalidCommitMessageException;
 import hubz.core.exception.RepositoryNotFoundException;
+import hubz.core.service.RepositoryHelper;
 import hubz.io.JsonSerializer;
 import hubz.model.OperationResult;
 import hubz.model.clustermodel.ClusterModel;
@@ -18,6 +19,7 @@ import hubz.util.TimeUtil;
 import java.io.File;
 import java.io.IOException;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 public class CommitService {
@@ -40,7 +42,7 @@ public class CommitService {
             throw new RepositoryNotFoundException("No repository found. Run 'init' first. (CommitService -> commit)");
         }
         try{
-            CommitHelper commitHelper = new CommitHelper();
+            RepositoryHelper commitHelper = new RepositoryHelper();
             //Get Meta File
             MetaModel meta;
             File metaFile = new File(rootDir, HubzPath.META_FILE);
@@ -70,7 +72,7 @@ public class CommitService {
 
             //Scanning entire folder structure to store in new Index File without storing hash
             IndexModel newIndex = new IndexModel();
-            commitHelper.scanFileRecursive(rootDir,newIndex);
+            commitHelper.scanWorkingDirectory(rootDir,newIndex);
 
             //Finding created, modified, or deleted files in current folder
             //Map<relative path, absolute path>
@@ -78,7 +80,7 @@ public class CommitService {
             Map<String, String> modified = new LinkedHashMap<>();
             Map<String, String> deleted = new LinkedHashMap<>();
 
-            commitHelper.detectChanges(oldIndex, newIndex, created, modified, deleted);
+            commitHelper.calculateWorkingDirectoryDiff(oldIndex, newIndex, created, modified, deleted);
 
             if (created.isEmpty() && modified.isEmpty() && deleted.isEmpty()) {
                 return new OperationResult(true, "No changes detected. Working directory is up to date.");
@@ -110,6 +112,11 @@ public class CommitService {
                 blobs.put(path,BlobHash);
             }
 
+            //Storing deleted file and its hash in blob itself
+            for(String path : deleted.keySet()){
+                blobs.put(path,oldIndex.getFiles().get(path).getHash());
+            }
+
             //Creating new tree model for current commit
             TreeModel tree = new TreeModel();
             tree.setFiles(blobs);
@@ -120,11 +127,7 @@ public class CommitService {
 
             //Now getting parent commit
             File branchRefFile = new File(hubzDir, commitHelper.getBranchPath());
-            String parentHash = null;
-            if (FileManager.exists(branchRefFile.getAbsolutePath())) {
-                parentHash = FileManager.readFile(branchRefFile.getAbsolutePath()).trim();
-                if (parentHash.isEmpty()) parentHash = null;
-            }
+            String parentHash = commitHelper.getHeadCommitHash();
 
             int commitNumber = meta.getCommitCount()+1;
             //Creating commit model and storing it in commit dir
@@ -135,8 +138,9 @@ public class CommitService {
             commit.setTree(treeHash);
             commit.setTimestamp(TimeUtil.getCurrentTimestamp());
             commit.setMessage(message);
-            commit.setDeletedFiles(deleted);
-
+            List<String> deletedFilesList = deleted.keySet().stream().toList();
+            commit.setDeletedFiles(deletedFilesList);
+            commit.setBranchName(HubzContext.getCurrentBranchName());
             String commitHash = JsonSerializer.saveCommit(commit);
 
             //Updating hash in current branch file at branch\refs dir

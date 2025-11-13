@@ -26,7 +26,7 @@ public class JsonUtil {
     }
 
     //String json to complex class type like List<Map<String,String>>
-    //Deserialization
+    //Deserialization - overloading method
     public static <T> T fromJson(String json, Type typeOfT) {
         return gson.fromJson(json, typeOfT);
     }

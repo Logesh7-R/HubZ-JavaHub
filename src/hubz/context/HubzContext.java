@@ -12,7 +12,7 @@ public class HubzContext {
 
     private static File rootDir;
     private static boolean initialized = false;
-
+    private static String currentBranchName = "main";
     private static String currentAuthor;
 
     private static LinkedHashSet<String> authors = new LinkedHashSet<>();
@@ -55,11 +55,15 @@ public class HubzContext {
     }
 
     public static void setAllAuthorsFromList(List<String> list) {
-        authors.clear();
         if (list != null) {
+            authors.clear();
             for (String s : list) {
                 if (s != null && !s.trim().isEmpty()) authors.add(s.trim());
             }
         }
     }
+
+    public static String getCurrentBranchName() { return currentBranchName; }
+
+    public static void setCurrentBranchName(String branchName) { currentBranchName = branchName; }
 }

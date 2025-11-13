@@ -44,7 +44,7 @@ public class JsonSerializer {
         String treeDir = new File(rootDir, HubzPath.TREES_DIR).getAbsolutePath();
         String json = JsonUtil.toJson(tree);
         String treeHash = HashUtil.sha256String(json);
-        String TreePath = treeDir+File.separator+treeHash+".txt";
+        String TreePath = treeDir+File.separator+treeHash+".json";
         if(!FileManager.exists(TreePath)){
             FileManager.createFile(TreePath, json);
         }
@@ -58,7 +58,7 @@ public class JsonSerializer {
         String commitDir = new File(rootDir, HubzPath.COMMITS_DIR).getAbsolutePath();
         String json = JsonUtil.toJson(commit);
         String commitHash = HashUtil.sha256String(json);
-        String commitPath = commitDir+File.separator+ commitHash +".txt";
+        String commitPath = commitDir+File.separator+ commitHash +".json";
         if(!FileManager.exists(commitPath)){
             FileManager.createFile(commitPath, json);
         }
