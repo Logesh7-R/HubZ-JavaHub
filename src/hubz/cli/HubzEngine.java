@@ -200,9 +200,11 @@ public class HubzEngine {
             return;
         }
         try {
+            HubzContext.clearContext();
             HubzContext.setRootDir(newPath);
             printer.info("Base directory successfully reset to: " +
                     HubzContext.getRootDir().getAbsolutePath());
+            setAuthorAndBranchNameIfExist();
         } catch (IllegalArgumentException e) {
             printer.warn("Invalid directory: " + e.getMessage());
             printer.info("Please enter a valid existing path (absolute path recommended).");

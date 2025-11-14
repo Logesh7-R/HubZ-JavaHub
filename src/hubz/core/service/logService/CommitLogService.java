@@ -13,6 +13,17 @@ import java.util.*;
 
 public class CommitLogService {
 
+    private static final String RESET   = "\u001B[0m";
+    private static final String BOLD    = "\u001B[1m";
+
+    private static final String RED     = "\u001B[31m";
+    private static final String GREEN   = "\u001B[32m";
+    private static final String YELLOW  = "\u001B[33m";
+    private static final String BLUE    = "\u001B[34m";
+    private static final String MAGENTA = "\u001B[35m";
+    private static final String CYAN    = "\u001B[36m";
+    private static final String WHITE   = "\u001B[37m";
+
     //Used to load <limit or 25> commits from head
     public List<String> loadCommitLogs(int limit)
             throws IOException, RepositoryNotFoundException {
@@ -38,16 +49,39 @@ public class CommitLogService {
             CommitModel c = JsonSerializer.readJsonFile(commitFile, CommitModel.class);
 
             StringBuilder block = new StringBuilder();
-            block.append("Commit: ").append(hash);
+
+            block.append(BOLD).append(CYAN)
+                    .append("commit ").append(hash)
+                    .append(RESET);
+
             if (hash.equals(headHash)) {
-                block.append(" (HEAD, ").append(c.getBranchName()).append(")");
+                block.append(" ")
+                        .append(BOLD).append(BLUE)
+                        .append("(HEAD -> ").append(c.getBranchName()).append(")")
+                        .append(RESET);
             }
+
             block.append("\n");
 
-            block.append("Number: ").append(c.getCommitNumber()).append("\n");
-            block.append("Author: ").append(c.getAuthor()).append("\n");
-            block.append("Date  : ").append(c.getTimestamp()).append("\n");
-            block.append("Message: ").append(c.getMessage()).append("\n");
+            block.append(YELLOW)
+                    .append("Number: ").append(c.getCommitNumber())
+                    .append(RESET).append("\n");
+
+            block.append(GREEN)
+                    .append("Author: ").append(c.getAuthor())
+                    .append(RESET).append("\n");
+
+            block.append(MAGENTA)
+                    .append("Date:   ").append(c.getTimestamp())
+                    .append(RESET).append("\n");
+
+            block.append(BOLD).append(WHITE)
+                    .append("Message: ").append(c.getMessage())
+                    .append(RESET).append("\n");
+
+            block.append(CYAN)
+                    .append("-------------------------------------")
+                    .append(RESET).append("\n\n");
 
             output.add(block.toString());
         }

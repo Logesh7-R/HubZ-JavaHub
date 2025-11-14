@@ -5,7 +5,7 @@ import java.util.Map;
 
 public class TreeModel {
     transient private String hash;
-    private Map<String, String> files = new LinkedHashMap<>(); //Relative Filepath -> blob hash
+    private Map<String, TreeEntry> files = new LinkedHashMap<>(); //Relative Filepath -> old blob hash and new blob hash
     public TreeModel() {}
 
     public String getHash() {
@@ -16,11 +16,11 @@ public class TreeModel {
         this.hash = hash;
     }
 
-    public Map<String, String> getFiles() {
+    public Map<String, TreeEntry> getFiles() {
         return files;
     }
 
-    public void setFiles(Map<String, String> files) {
+    public void setFiles(Map<String, TreeEntry> files) {
         this.files = files;
     }
 }

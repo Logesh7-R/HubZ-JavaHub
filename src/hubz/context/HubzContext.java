@@ -66,4 +66,11 @@ public class HubzContext {
     public static String getCurrentBranchName() { return currentBranchName; }
 
     public static void setCurrentBranchName(String branchName) { currentBranchName = branchName; }
+
+    public static void clearContext(){
+        rootDir = null ;
+        initialized = false;
+        currentBranchName = "main";
+        currentAuthor = null;
+    }
 }

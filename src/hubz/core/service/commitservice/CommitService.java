@@ -11,6 +11,7 @@ import hubz.model.clustermodel.SnapshotInfo;
 import hubz.model.commitmodel.CommitModel;
 import hubz.model.indexmodel.IndexModel;
 import hubz.model.metamodel.MetaModel;
+import hubz.model.treemodel.TreeEntry;
 import hubz.model.treemodel.TreeModel;
 import hubz.io.FileManager;
 import hubz.util.HubzPath;
@@ -88,33 +89,38 @@ public class CommitService {
 
             //Recording blobs and its hash
             //Map<relative path, blob hash>
-            Map<String,String> blobs = new LinkedHashMap<>();
+            Map<String, TreeEntry> blobs = new LinkedHashMap<>();
 
             //Saving blob for newly created and modified files
             for(String path : created.keySet()){
                 String absolutePath = created.get(path);
 
-                String BlobHash = JsonSerializer.saveBlob(absolutePath);
+                String newBlobHash = JsonSerializer.saveBlob(absolutePath);
 
                 //Setting blob hash in index model
-                newIndex.getFiles().get(path).setHash(BlobHash);
-
-                blobs.put(path,BlobHash);
+                newIndex.getFiles().get(path).setHash(newBlobHash);
+                TreeEntry treeEntry = new TreeEntry();
+                treeEntry.setCreatedBlob(newBlobHash);
+                blobs.put(path, treeEntry);
             }
 
             for(String path : modified.keySet()){
                 String absolutePath = modified.get(path);
-                String BlobHash = JsonSerializer.saveBlob(absolutePath);
+                String newBlobHash = JsonSerializer.saveBlob(absolutePath);
 
                 //Setting blob hash in index model
-                newIndex.getFiles().get(path).setHash(BlobHash);
+                newIndex.getFiles().get(path).setHash(newBlobHash);
 
-                blobs.put(path,BlobHash);
+                String oldBlobHash = oldIndex.getFiles().get(path).getHash();
+                blobs.put(path,new TreeEntry(oldBlobHash,newBlobHash));
             }
 
             //Storing deleted file and its hash in blob itself
             for(String path : deleted.keySet()){
-                blobs.put(path,oldIndex.getFiles().get(path).getHash());
+                String oldBlobHash = oldIndex.getFiles().get(path).getHash();
+                TreeEntry treeEntry = new TreeEntry();
+                treeEntry.setDeletedBlob(oldBlobHash);
+                blobs.put(path,treeEntry);
             }
 
             //Creating new tree model for current commit
