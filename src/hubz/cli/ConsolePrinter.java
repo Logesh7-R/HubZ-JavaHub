@@ -1,5 +1,7 @@
 package hubz.cli;
 
+import java.util.Map;
+
 public class ConsolePrinter {
 
     // ANSI Escape Codes
@@ -17,7 +19,7 @@ public class ConsolePrinter {
     public void printBanner() {
         System.out.println(CYAN + BOLD +
                 "=====================================\n" +
-                "                   HubZ Engine\n" +
+                "              HubZ Engine\n" +
                 "=====================================" +
                 RESET);
     }
@@ -41,4 +43,49 @@ public class ConsolePrinter {
     public void prompt() {
         System.out.print(CYAN + BOLD + "hubz> " + RESET);
     }
+
+
+    public void printChangedFiles(Map<String,String> files) {
+        section("Changed Files");
+        if (files == null || files.isEmpty()) {
+            info("No changed files.");
+            return;
+        }
+        System.out.println(BLUE + BOLD + "Changed Files:" + RESET);
+        for (Map.Entry<String,String> file : files.entrySet()) {
+            String relativePath = file.getKey();
+            String changes = file.getValue();
+            System.out.println(BLUE + "  ● " +relativePath+" - "+changes + RESET);
+        }
+    }
+
+    public void printConflictFiles(Map<String,String> conflictFiles) {
+        section("Conflicting Files");
+        if (conflictFiles == null || conflictFiles.isEmpty()) {
+            info("No conflicts.");
+            return;
+        }
+
+        System.out.println(RED + BOLD + "Conflicts Found:" + RESET);
+
+        for (Map.Entry<String,String> file : conflictFiles.entrySet()) {
+            String relativePath = file.getKey();
+            String changes = file.getValue();
+            System.out.println(RED + BOLD + "  ✖ " +relativePath+" - "+changes + RESET);
+        }
+
+        System.out.println(YELLOW +
+                "Resolve the conflict markers (<<<<<<<, =======, >>>>>>>) inside the files.\n" +
+                "Then run: commit <message>" +
+                RESET);
+    }
+    public void printConflictFiles(Map<String,String> changedFiles,Map<String,String> conflictFiles){
+        printChangedFiles(changedFiles);
+        printConflictFiles(conflictFiles);
+    }
+
+    public void section(String title) {
+        System.out.println(MAGENTA + BOLD + "\n=== " + title + " ===" + RESET);
+    }
+
 }

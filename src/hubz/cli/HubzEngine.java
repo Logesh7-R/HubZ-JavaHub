@@ -4,6 +4,7 @@ import hubz.context.HubzContext;
 import hubz.core.operations.*;
 import hubz.io.JsonSerializer;
 import hubz.model.OperationResult;
+import hubz.model.RevertResult;
 import hubz.model.metamodel.MetaModel;
 import hubz.util.HubzPath;
 
@@ -68,6 +69,10 @@ public class HubzEngine {
             case "log":
                 operation = new LogOperation();
                 break;
+
+            case "revert":
+                handleRevertCommand(args);
+                return;
 
             default:
                 printer.warn("Unknown command: " + command);
@@ -208,6 +213,51 @@ public class HubzEngine {
         } catch (IllegalArgumentException e) {
             printer.warn("Invalid directory: " + e.getMessage());
             printer.info("Please enter a valid existing path (absolute path recommended).");
+        }
+    }
+
+    //to handle revert output
+    private void handleRevertCommand(String args) {
+        if (args == null || args.isEmpty()) {
+            printer.warn("Please provide a commit hash.");
+            printer.info("Usage: revert <commitHash>");
+            return;
+        }
+
+        RevertOperation op = new RevertOperation();
+        RevertResult result = op.execute(args);
+
+        handleRevertResult(result);
+    }
+
+    private void handleRevertResult(RevertResult result) {
+
+        switch (result.getStatus()) {
+
+            case NOT_FOUND:
+                printer.error(result.getMessage());
+                break;
+
+            case ABORTED:
+                printer.warn(result.getMessage());
+                break;
+
+            case SUCCESS:
+                printer.success("Revert prepared successfully for commit: " + result.getTargetCommit());
+                printer.printChangedFiles(result.getChangedFiles());
+                printer.info("Run:commit Revert to " + result.getTargetCommit());
+                break;
+
+            case CONFLICT:
+                printer.warn("Revert completed with conflicts.");
+                if(result.getChangedFiles().isEmpty()) {
+                    printer.printConflictFiles(result.getConflictFiles());
+                }
+                else{
+                    printer.printConflictFiles(result.getChangedFiles(),result.getConflictFiles());
+                }
+                printer.info("Resolve conflicts and run: commit <message>");
+                break;
         }
     }
 }

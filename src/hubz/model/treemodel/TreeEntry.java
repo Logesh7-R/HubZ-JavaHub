@@ -22,7 +22,7 @@ public class TreeEntry {
         this.oldBlob = oldBlob;
     }
 
-    public String getNewBlob(){
+    public String getModifiedBlob(){
         return newBlob;
     }
 

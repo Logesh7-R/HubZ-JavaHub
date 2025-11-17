@@ -20,7 +20,6 @@ import hubz.util.TimeUtil;
 import java.io.File;
 import java.io.IOException;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
 public class CommitService {
@@ -43,37 +42,17 @@ public class CommitService {
             throw new RepositoryNotFoundException("No repository found. Run 'init' first. (CommitService -> commit)");
         }
         try{
-            RepositoryHelper commitHelper = new RepositoryHelper();
+            RepositoryHelper helper = new RepositoryHelper();
+
             //Get Meta File
-            MetaModel meta;
-            File metaFile = new File(rootDir, HubzPath.META_FILE);
-            if (!metaFile.exists()) {
-                meta = new MetaModel();
-                meta.setAuthors(HubzContext.getAllAuthorsAsList());
-            } else {
-                meta = JsonSerializer.readJsonFile(metaFile, MetaModel.class);
-                if (meta == null) meta = new MetaModel();
-                // sync meta authors with context (context takes precedence)
-                if (!HubzContext.getAllAuthorsAsList().isEmpty()) {
-                    meta.setAuthors(HubzContext.getAllAuthorsAsList());
-                } else if (meta.getAuthors() != null && !meta.getAuthors().isEmpty()) {
-                    HubzContext.setAllAuthorsFromList(meta.getAuthors());
-                }
-            }
+            MetaModel meta = helper.loadMeta();
 
             //Get Old Index File
-            IndexModel oldIndex;
-            File oldIndexFile = new File(rootDir, HubzPath.INDEX_FILE);
-            if(!oldIndexFile.exists()){
-                oldIndex = new IndexModel();
-            } else {
-                oldIndex = JsonSerializer.readJsonFile(oldIndexFile, IndexModel.class);
-                if (oldIndex==null) oldIndex = new IndexModel();
-            }
+            IndexModel oldIndex = helper.loadIndex();
 
             //Scanning entire folder structure to store in new Index File without storing hash
             IndexModel newIndex = new IndexModel();
-            commitHelper.scanWorkingDirectory(rootDir,newIndex);
+            helper.scanWorkingDirectory(rootDir,newIndex);
 
             //Finding created, modified, or deleted files in current folder
             //Map<relative path, absolute path>
@@ -81,7 +60,7 @@ public class CommitService {
             Map<String, String> modified = new LinkedHashMap<>();
             Map<String, String> deleted = new LinkedHashMap<>();
 
-            commitHelper.calculateWorkingDirectoryDiff(oldIndex, newIndex, created, modified, deleted);
+            helper.calculateWorkingDirectoryDiff(oldIndex, newIndex, created, modified, deleted);
 
             if (created.isEmpty() && modified.isEmpty() && deleted.isEmpty()) {
                 return new OperationResult(true, "No changes detected. Working directory is up to date.");
@@ -132,8 +111,8 @@ public class CommitService {
             tree.setHash(treeHash);
 
             //Now getting parent commit
-            File branchRefFile = new File(hubzDir, commitHelper.getBranchPath());
-            String parentHash = commitHelper.getHeadCommitHash();
+            File branchRefFile = new File(hubzDir, helper.getBranchPath());
+            String parentHash = helper.getHeadCommitHash();
 
             int commitNumber = meta.getCommitCount()+1;
             //Creating commit model and storing it in commit dir
@@ -141,11 +120,9 @@ public class CommitService {
             commit.setCommitNumber(commitNumber);
             commit.setAuthor(HubzContext.getAuthor());
             commit.setParent(parentHash);
-            commit.setTree(treeHash);
+            commit.setTreeHash(treeHash);
             commit.setTimestamp(TimeUtil.getCurrentTimestamp());
             commit.setMessage(message);
-            List<String> deletedFilesList = deleted.keySet().stream().toList();
-            commit.setDeletedFiles(deletedFilesList);
             commit.setBranchName(HubzContext.getCurrentBranchName());
             String commitHash = JsonSerializer.saveCommit(commit);
 

@@ -4,8 +4,11 @@ import com.google.gson.reflect.TypeToken;
 import hubz.context.HubzContext;
 import hubz.core.exception.RepositoryNotFoundException;
 import hubz.io.FileManager;
+import hubz.io.JsonSerializer;
+import hubz.model.commitmodel.CommitModel;
 import hubz.model.indexmodel.IndexEntry;
 import hubz.model.indexmodel.IndexModel;
+import hubz.model.metamodel.MetaModel;
 import hubz.util.HubzPath;
 import hubz.util.JsonUtil;
 
@@ -142,7 +145,117 @@ public class RepositoryHelper {
                 queue.addAll(children);
             }
         }
-
         return order;
     }
+
+    //Load meta file from hubzDirectory
+    public MetaModel loadMeta() throws IOException {
+        File metaFile = new File(HubzContext.getRootDir(), HubzPath.META_FILE);
+        MetaModel meta;
+
+        if (!metaFile.exists()) {
+            meta = new MetaModel();
+            meta.setAuthors(HubzContext.getAllAuthorsAsList());
+        } else {
+            meta = JsonSerializer.readJsonFile(metaFile, MetaModel.class);
+            if (meta == null) meta = new MetaModel();
+
+
+            if (!HubzContext.getAllAuthorsAsList().isEmpty()) {
+                meta.setAuthors(HubzContext.getAllAuthorsAsList());
+            } else if (meta.getAuthors() != null && !meta.getAuthors().isEmpty()) {
+                HubzContext.setAllAuthorsFromList(meta.getAuthors());
+            }
+        }
+        return meta;
+    }
+
+    //Load index file from hubzDirectory
+    public IndexModel loadIndex() throws IOException {
+        File indexFile = new File(HubzContext.getRootDir(), HubzPath.INDEX_FILE);
+        IndexModel index;
+
+        if (!indexFile.exists()) {
+            index = new IndexModel();
+        } else {
+            index = JsonSerializer.readJsonFile(indexFile, IndexModel.class);
+            if (index == null) index = new IndexModel();
+        }
+        return index;
+    }
+
+    //Conflict manager, this will handle merge, revert or reset conflict
+    public void handleConflict(String filePath,
+                                      String currentBlobHash,
+                                      String oldBlobHash,
+                                      CommitModel targetCommit) throws IOException {
+        if (filePath == null) throw new IllegalArgumentException("filePath cannot be null");
+
+        File repoRoot = HubzContext.getRootDir();
+        File targetFile = new File(filePath);
+        if (!targetFile.isAbsolute()) {
+            targetFile = new File(repoRoot, filePath);
+        }
+
+        StringBuilder builder = new StringBuilder();
+
+        // HEAD marker and current file content (if available)
+        builder.append("<<<<<<< HEAD").append(System.lineSeparator());
+        if (currentBlobHash != null && !currentBlobHash.isEmpty()) {
+            File currentBlobFile = new File(repoRoot, HubzPath.BLOBS_DIR +File.separator+ currentBlobHash + ".txt");
+            if (currentBlobFile.exists()) {
+                builder.append(FileManager.readFile(currentBlobFile.getAbsolutePath()));
+            } else if (targetFile.exists()) {
+                // read the working file itself
+                builder.append(FileManager.readFile(targetFile.getAbsolutePath()));
+            } else {
+                builder.append("<<missing current content>>");
+            }
+        } else {
+            if (targetFile.exists()) {
+                builder.append(FileManager.readFile(targetFile.getAbsolutePath()));
+            } else {
+                builder.append("<<missing current content>>");
+            }
+        }
+        builder.append(System.lineSeparator());
+
+        // divider
+        builder.append("=======").append(System.lineSeparator());
+
+        // (old commit) content
+        if (oldBlobHash != null && !oldBlobHash.isEmpty()) {
+            File oldBlobFile = new File(repoRoot, HubzPath.BLOBS_DIR +File.separator+ oldBlobHash + ".txt");
+            if (oldBlobFile.exists()) {
+                builder.append(FileManager.readFile(oldBlobFile.getAbsolutePath()));
+            } else {
+                builder.append("<<missing target commit content for blob ").append(oldBlobHash).append(">>");
+            }
+        } else {
+            builder.append("<<missing target commit content>>");
+        }
+        builder.append(System.lineSeparator());
+
+        // footer with commit info
+        if (targetCommit != null) {
+            builder.append(">>>>>>> Commit ")
+                    .append(targetCommit.getHash() != null ? targetCommit.getHash() : "<unknown>")
+                    .append(" (").append(targetCommit.getMessage() != null ? targetCommit.getMessage() : "").append(")")
+                    .append(System.lineSeparator());
+        } else {
+            builder.append(">>>>>>> Commit <unknown>").append(System.lineSeparator());
+        }
+
+        // ensure parent dir exists
+        File parent = targetFile.getParentFile();
+        if (parent != null && !parent.exists()) {
+            if (!parent.mkdirs()) {
+                throw new IOException("Failed to create parent directories for conflict file: " + parent.getAbsolutePath());
+            }
+        }
+
+        // write conflict file atomically
+        FileManager.atomicWrite(targetFile, builder.toString());
+    }
 }
+

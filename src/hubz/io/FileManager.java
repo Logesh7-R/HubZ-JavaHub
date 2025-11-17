@@ -51,6 +51,45 @@ public class FileManager {
         return content.toString();
     }
 
+    public static void deleteFileAndCleanParents(File file) throws IOException {
+        if (file == null) {
+            throw new IllegalArgumentException("File cannot be null");
+        }
+
+        if (file.exists()) {
+            if (!file.isFile()) {
+                throw new IOException("Cannot delete: not a regular file → " + file.getAbsolutePath());
+            }
+            if (!file.delete()) {
+                throw new IOException("Failed to delete file: " + file.getAbsolutePath());
+            }
+        } else {
+            return;
+        }
+
+        //Cleanup folder, if folder is empty
+        File parent = file.getParentFile();
+        File rootDir = HubzContext.getRootDir();
+        while (parent != null && !parent.equals(rootDir)) {
+            File[] children = parent.listFiles();
+
+            if (children != null && children.length == 0) {
+                if (!parent.delete()) {
+                    throw new IOException("Failed to delete empty directory: " + parent.getAbsolutePath());
+                }
+                parent = parent.getParentFile();
+            } else {
+                break; // stop if directory not empty
+            }
+        }
+    }
+
+
+
+    public static void deleteFileAndCleanParents(String path) throws IOException {
+        deleteFileAndCleanParents(new File(path));
+    }
+
     public static void writeFile(String filePath, String content) throws IOException {
         try (FileWriter writer = new FileWriter(filePath)) {
             writer.write(content);
@@ -91,6 +130,10 @@ public class FileManager {
                 tempFile.delete();
             }
         }
+    }
+
+    public static void atomicWrite(String target, String content) throws IOException{
+        atomicWrite(new File(target),content);
     }
 }
 
