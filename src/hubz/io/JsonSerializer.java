@@ -6,6 +6,7 @@ import hubz.model.clustermodel.ClusterModel;
 import hubz.model.commitmodel.CommitModel;
 import hubz.model.indexmodel.IndexModel;
 import hubz.model.metamodel.MetaModel;
+import hubz.model.resetmodel.ResetStackModel;
 import hubz.model.treemodel.TreeModel;
 import hubz.util.HashUtil;
 import hubz.util.HubzPath;
@@ -90,7 +91,13 @@ public class JsonSerializer {
         FileManager.atomicWrite(metaFile, json);
     }
 
-//    public static Map<String, > getGraph
+    //Update reset-stack file using atomic write
+    public static void saveResetStack(ResetStackModel resetStack) throws IOException {
+//        File baseDir = new File(HubZContext.getRootDir(), HubZPath.HUBZ_DIR);
+        File resetStackFile = new File(rootDir, HubzPath.RESET_STACK_FILE);
+        String json = JsonUtil.toJson(resetStack);
+        FileManager.atomicWrite(resetStackFile, json);
+    }
 
     //Appending new parent and child hash.
     //Child hash : [parent hashes]

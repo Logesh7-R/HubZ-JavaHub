@@ -5,10 +5,14 @@ import hubz.context.HubzContext;
 import hubz.core.exception.RepositoryNotFoundException;
 import hubz.io.FileManager;
 import hubz.io.JsonSerializer;
+import hubz.model.clustermodel.ClusterModel;
+import hubz.model.clustermodel.SnapshotInfo;
 import hubz.model.commitmodel.CommitModel;
 import hubz.model.indexmodel.IndexEntry;
 import hubz.model.indexmodel.IndexModel;
 import hubz.model.metamodel.MetaModel;
+import hubz.model.treemodel.TreeEntry;
+import hubz.model.treemodel.TreeModel;
 import hubz.util.HubzPath;
 import hubz.util.JsonUtil;
 
@@ -127,8 +131,7 @@ public class RepositoryHelper {
         LinkedHashMap<String, List<String>> graph = JsonUtil.fromJson(json, type);
         if (graph == null) return Collections.emptyList();
 
-        RepositoryHelper helper = new RepositoryHelper();
-        String head = helper.getHeadCommitHash();
+        String head = getHeadCommitHash();
 
         List<String> order = new ArrayList<>();
         Queue<String> queue = new ArrayDeque<>();
@@ -256,6 +259,190 @@ public class RepositoryHelper {
 
         // write conflict file atomically
         FileManager.atomicWrite(targetFile, builder.toString());
+    }
+
+    public IndexModel buildTargetIndex(String targetCommitHash) throws IOException, RepositoryNotFoundException {
+        List<String> history = traverseGraphFromHead();
+        if (history == null || history.isEmpty() || !history.contains(targetCommitHash)) {
+            return null;
+        }
+
+        File targetCommitFile = HubzPath.getCommitFilePath(targetCommitHash);
+        CommitModel targetCommit = JsonSerializer.readJsonFile(targetCommitFile, CommitModel.class);
+        SnapshotInfo nearestSnapShot = getNearestSnapShot(targetCommit);
+        List<String> graphPaths = getShortestPath(targetCommitHash,nearestSnapShot.getCommit());
+        IndexModel targetIndex = JsonSerializer.readJsonFile(new File(nearestSnapShot.getPath()), IndexModel.class);
+        Map<String, IndexEntry> targetFileStructure = targetIndex.getFiles();
+        for(String commitHash : graphPaths){
+            CommitModel commitModel = JsonSerializer.readJsonFile(HubzPath.getCommitFilePath(commitHash), CommitModel.class);
+            TreeModel treeModel = JsonSerializer.readJsonFile(HubzPath.getTreeFilePath(commitModel.getTreeHash()), TreeModel.class);
+            Map<String,TreeEntry> treeFiles = treeModel.getFiles();
+
+            for(String path : treeFiles.keySet()){
+                TreeEntry treeEntry = treeFiles.get(path);
+
+                if(treeEntry.isCreated()||treeEntry.isModified()){
+                    IndexEntry index = new IndexEntry();
+                    index.setHash(treeEntry.getCreatedBlob());
+                    index.setSize(treeEntry.getSize());
+                    index.setMtime(treeEntry.getMtime());
+                    targetFileStructure.put(path,index);
+                }
+                else if(treeEntry.isDeleted()){
+                    targetFileStructure.remove(path);
+                }
+
+            }
+        }
+        targetIndex.setFiles(targetFileStructure);
+        return targetIndex;
+    }
+
+    public SnapshotInfo getNearestSnapShot(CommitModel targetCommit) throws IOException {
+        int targetCommitNumber = targetCommit.getCommitNumber();
+        SnapshotInfo nearestSnapShot = null;
+        ClusterModel cluster;
+        File clusterFile = new File(HubzContext.getRootDir(), HubzPath.CLUSTER_FILE);
+        if (FileManager.exists(clusterFile.getAbsolutePath())) {
+            cluster = JsonSerializer.readJsonFile(clusterFile, ClusterModel.class);
+            if (cluster == null) cluster = new ClusterModel();
+        } else {
+            cluster = new ClusterModel();
+        }
+
+        for(SnapshotInfo si : cluster.getSnapshots()){
+            if(nearestSnapShot==null){
+                nearestSnapShot =si;
+            }else{
+                if(si.getCommitNumber()<=targetCommitNumber){
+                    if(nearestSnapShot.getCommitNumber()>si.getCommitNumber()){
+                        nearestSnapShot = si;
+                    }
+                }
+            }
+        }
+        return nearestSnapShot;
+    }
+
+    public List<String> getShortestPath(String startHash,String targetHash) throws IOException {
+        File graphFile = new File(HubzContext.getRootDir(), HubzPath.GRAPH_FILE);
+
+        String json = FileManager.readFile(graphFile.getAbsolutePath());
+        Type type = new TypeToken<LinkedHashMap<String, List<String>>>(){}.getType();
+
+        LinkedHashMap<String, List<String>> graph = JsonUtil.fromJson(json, type);
+        if (graph == null) return Collections.emptyList();
+
+        if (startHash.equals(targetHash)) {
+            return Collections.singletonList(startHash);
+        }
+
+        Queue<String> queue = new LinkedList<>();
+        queue.add(startHash);
+
+        Map<String,String> parent = new LinkedHashMap<>();
+        parent.put(startHash,null);
+
+        while (!queue.isEmpty()) {
+            String current = queue.poll();
+
+            List<String> neighbors = graph.getOrDefault(current, Collections.emptyList());
+
+            for (String next : neighbors) {
+                if (!parent.containsKey(next)) {
+                    parent.put(next, current);
+                    queue.add(next);
+
+                    if (next.equals(targetHash)) {
+                        return buildPath(parent, targetHash);
+                    }
+                }
+            }
+        }
+
+        return Collections.emptyList();
+    }
+
+    private List<String> buildPath(Map<String,String>parent,String targetHash){
+        List<String> path = new ArrayList<>();
+        String node = targetHash;
+
+        while (node != null) {
+            path.add(node);
+            node = parent.get(node);
+        }
+
+        Collections.reverse(path);
+        return path;
+    }
+
+    public void buildFolder(IndexModel buildingIndex) throws IOException {
+        IndexModel currentIndex = new IndexModel();
+        scanWorkingDirectory(HubzContext.getRootDir(), currentIndex);
+
+        List<String> deletingFiles = new LinkedList<>();
+        List<String> creatingFiles = new LinkedList<>();
+        List<String> modifyingFiles = new LinkedList<>();
+
+        Map<String, IndexEntry> buildingFolder = buildingIndex.getFiles();
+        Map<String, IndexEntry> currentFolder = currentIndex.getFiles();
+        for(String path: buildingFolder.keySet()){
+            if(!currentFolder.containsKey(path)){
+                creatingFiles.add(path);
+            }
+            else if(!buildingFolder.get(path).getHash().equals(currentFolder.get(path).getHash())){
+                modifyingFiles.add(path);
+            }
+        }
+
+        for(String path: currentFolder.keySet()){
+            if(!buildingFolder.containsKey(path)){
+                deletingFiles.add(path);
+            }
+        }
+
+        for(String path:creatingFiles){
+            String blobHash = buildingFolder.get(path).getHash();
+            File blobFile = HubzPath.getBlobFilePath(blobHash);
+            File workingFile = new File(HubzContext.getRootDir(), path);
+            String content = FileManager.readFile(blobFile.getAbsolutePath());
+            FileManager.createDir(workingFile.getParent());
+            FileManager.createFile(workingFile.getAbsolutePath(), content);
+        }
+
+        for(String path:modifyingFiles){
+            String blobHash = buildingFolder.get(path).getHash();
+            File blobFile = HubzPath.getBlobFilePath(blobHash);
+            File workingFile = new File(HubzContext.getRootDir(), path);
+            String content = FileManager.readFile(blobFile.getAbsolutePath());
+            FileManager.atomicWrite(workingFile, content);
+        }
+
+        for(String path:deletingFiles){
+            File workingFile = new File(HubzContext.getRootDir(), path);
+            FileManager.deleteFileAndCleanParents(workingFile);
+        }
+    }
+
+    public void setTerminatedSnapshotPath(String targetCommitHash, List<String> terminatedSnapshotPath) throws RepositoryNotFoundException, IOException {
+        String currentCommitHash = getHeadCommitHash();
+        File currentCommitPath = HubzPath.getCommitFilePath(currentCommitHash);
+        CommitModel currentCommitModel = JsonSerializer.readJsonFile(currentCommitPath, CommitModel.class);
+
+        File targetCommitPath = HubzPath.getCommitFilePath(targetCommitHash);
+        CommitModel targetCommitModel = JsonSerializer.readJsonFile(targetCommitPath, CommitModel.class);
+
+        int tmp1 = (targetCommitModel.getCommitNumber()+1)/50;
+        int tmp2 = (currentCommitModel.getCommitNumber()-1)/50;
+
+        int start = Math.min(tmp1, tmp2);
+        int end = Math.max(tmp1,tmp2);
+
+        for(int i = start;i<=end;i++){
+            if(i!=0){
+                terminatedSnapshotPath.add(HubzPath.getSnapshotFileName(i*50));
+            }
+        }
     }
 }
 

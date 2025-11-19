@@ -2,7 +2,7 @@ package hubz.core.operations;
 
 import hubz.core.exception.RepositoryNotFoundException;
 
-import hubz.core.service.logService.CommitLogService;
+import hubz.core.service.logservice.CommitLogService;
 import hubz.model.OperationResult;
 
 public class LogOperation implements Operation {

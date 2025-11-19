@@ -15,7 +15,6 @@ import hubz.util.HubzPath;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -92,38 +91,38 @@ public class RevertService {
         //Modified -> Returned to old blob content, if no conflict (when target commit's newBlob != current blob)
         //Deleted -> Created it, if no conflict(when file exist in same file name)
         for (Map.Entry<String, TreeEntry> e : files.entrySet()) {
-            String relativePath = e.getKey();
-            TreeEntry entry = e.getValue();
+            String relativePathOfCurrentFile = e.getKey();
+            TreeEntry currentTreeEntry = e.getValue();
 
             // Get current working file and its corresponding hash
-            File workingFile = new File(rootDir, relativePath);
+            File workingFile = new File(rootDir, relativePathOfCurrentFile);
             boolean workingExists = workingFile.exists();
-            boolean indexHas = newIndex.getFiles().containsKey(relativePath);
-            String indexHash = indexHas ? newIndex.getFiles().get(relativePath).getHash() : null;
+            boolean indexHas = newIndex.getFiles().containsKey(relativePathOfCurrentFile);
+            String indexHash = indexHas ? newIndex.getFiles().get(relativePathOfCurrentFile).getHash() : null;
 
             // case 1 : if created in target commit
-            if (entry.isCreated()) {
+            if (currentTreeEntry.isCreated()) {
                 // If new blob in target commit is same as index blob, then there is no conflict
                 //Safe to delete it
-                String createdBlob = entry.getCreatedBlob();
+                String createdBlob = currentTreeEntry.getCreatedBlob();
                 if (indexHas && indexHash != null && indexHash.equals(createdBlob)) {
                     // safe to delete working file
                     if (workingExists) {
                         FileManager.deleteFileAndCleanParents(workingFile);
-                        changedFiles.put(relativePath,"DELETED");
+                        changedFiles.put(relativePathOfCurrentFile,"DELETED");
                     }
                 } else {
                     // conflict
                     if (indexHas && indexHash != null && !indexHash.equals(createdBlob)) {
-                        conflictFiles.put(relativePath, "DELETED");
-                        helper.handleConflict(relativePath, indexHash, createdBlob, targetCommit);
+                        conflictFiles.put(relativePathOfCurrentFile, "DELETED");
+                        helper.handleConflict(relativePathOfCurrentFile, indexHash, createdBlob, targetCommit);
                     }
                 }
             }
 
             // case 2 : if file was deleted in target commit
-            else if (entry.isDeleted()) {
-                String deletedBlob = entry.getDeletedBlob();
+            else if (currentTreeEntry.isDeleted()) {
+                String deletedBlob = currentTreeEntry.getDeletedBlob();
                 // While restoring deleted, check if any file exists in same name, if no then create that file
                 if (!workingExists) {
                     if (deletedBlob != null) {
@@ -132,22 +131,22 @@ public class RevertService {
                             String content = FileManager.readFile(blobFile.getAbsolutePath());
                             FileManager.createDir(workingFile.getParent());
                             FileManager.createFile(workingFile.getAbsolutePath(), content);
-                            changedFiles.put(relativePath,"CREATED");
+                            changedFiles.put(relativePathOfCurrentFile,"CREATED");
                         } else {
                             // blob missing -> conflict
-                            conflictFiles.put(relativePath,"CREATED");
-                            helper.handleConflict(relativePath, indexHash, deletedBlob, targetCommit);
+                            conflictFiles.put(relativePathOfCurrentFile,"CREATED");
+                            helper.handleConflict(relativePathOfCurrentFile, indexHash, deletedBlob, targetCommit);
                         }
                     } else {
                         // no blob info -> conflict
-                        conflictFiles.put(relativePath,"CREATED");
-                        helper.handleConflict(relativePath, indexHash, deletedBlob, targetCommit);
+                        conflictFiles.put(relativePathOfCurrentFile,"CREATED");
+                        helper.handleConflict(relativePathOfCurrentFile, indexHash, deletedBlob, targetCommit);
                     }
                 } else {
                     // working file exists. Two possibilities
                     //1. Target file exists and unchanged -> no conflict
                     //2. Target file exists and changed -> conflict
-                    if (indexHas && indexHash != null && indexHash.equals(entry.getModifiedBlob())) {
+                    if (indexHas && indexHash != null && indexHash.equals(currentTreeEntry.getModifiedBlob())) {
                         // File was deleted in target commit, but exists now and unchanged
                         if (deletedBlob != null) {
                             File blobFile = new File(rootDir, HubzPath.BLOBS_DIR +File.separator+
@@ -155,29 +154,29 @@ public class RevertService {
                             if (blobFile.exists()) {
                                 String content = FileManager.readFile(blobFile.getAbsolutePath());
                                 FileManager.atomicWrite(workingFile, content);
-                                changedFiles.put(relativePath,"CREATED");
+                                changedFiles.put(relativePathOfCurrentFile,"CREATED");
                             } else {
                                 // blob missing -> conflict
-                                conflictFiles.put(relativePath,"CREATED");
-                                helper.handleConflict(relativePath, indexHash, deletedBlob, targetCommit);
+                                conflictFiles.put(relativePathOfCurrentFile,"CREATED");
+                                helper.handleConflict(relativePathOfCurrentFile, indexHash, deletedBlob, targetCommit);
                             }
                         } else {
                             // no blob info -> conflict
-                            conflictFiles.put(relativePath,"CREATED");
-                            helper.handleConflict(relativePath, indexHash, deletedBlob, targetCommit);
+                            conflictFiles.put(relativePathOfCurrentFile,"CREATED");
+                            helper.handleConflict(relativePathOfCurrentFile, indexHash, deletedBlob, targetCommit);
                         }
                     } else {
                         // user changed file -> conflict
-                        conflictFiles.put(relativePath,"CREATED");
-                        helper.handleConflict(relativePath, indexHash, entry.getDeletedBlob(), targetCommit);
+                        conflictFiles.put(relativePathOfCurrentFile,"CREATED");
+                        helper.handleConflict(relativePathOfCurrentFile, indexHash, currentTreeEntry.getDeletedBlob(), targetCommit);
                     }
                 }
             }
 
             // case 3:if file was modified in target commit
-            else if (entry.isModified()) {
-                String targetOldBlob = entry.getOldBlob();      // blob in target (older)
-                String targetNewBlob = entry.getModifiedBlob(); // blob of "modified" blob
+            else if (currentTreeEntry.isModified()) {
+                String targetOldBlob = currentTreeEntry.getOldBlob();      // blob in target (older)
+                String targetNewBlob = currentTreeEntry.getModifiedBlob(); // blob of "modified" blob
                 // modified blob equals with current blob hash, then no conflict, restore to old blob
                 if (indexHas && indexHash != null && indexHash.equals(targetNewBlob)) {
                     // safe to revert file to old blob
@@ -185,16 +184,18 @@ public class RevertService {
                     if (srcBlob.exists()) {
                         String content = FileManager.readFile(srcBlob.getAbsolutePath());
                         FileManager.atomicWrite(workingFile, content);
-                        changedFiles.put(relativePath,"MODIFIED");
+                        changedFiles.put(relativePathOfCurrentFile,"MODIFIED");
                     } else {
                         // blob missing -> conflict
-                        conflictFiles.put(relativePath,"MODIFIED");
-                        helper.handleConflict(relativePath, indexHash, targetOldBlob, targetCommit);
+                        conflictFiles.put(relativePathOfCurrentFile,"MODIFIED");
+                        helper.handleConflict(relativePathOfCurrentFile, indexHash, targetOldBlob, targetCommit);
                     }
                 } else {
                     // working copy differs from index marker -> conflict
-                    conflictFiles.put(relativePath,"MODIFIED");
-                    helper.handleConflict(relativePath, indexHash, targetNewBlob, targetCommit);
+                    if(indexHas && indexHash != null && !indexHash.equals(targetOldBlob)) {
+                        conflictFiles.put(relativePathOfCurrentFile, "MODIFIED");
+                        helper.handleConflict(relativePathOfCurrentFile, indexHash, targetNewBlob, targetCommit);
+                    }
                 }
             }
             else {

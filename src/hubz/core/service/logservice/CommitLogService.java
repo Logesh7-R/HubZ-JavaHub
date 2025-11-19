@@ -1,4 +1,4 @@
-package hubz.core.service.logService;
+package hubz.core.service.logservice;
 
 import hubz.context.HubzContext;
 import hubz.core.exception.RepositoryNotFoundException;

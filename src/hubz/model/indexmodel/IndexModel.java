@@ -17,4 +17,5 @@ public class IndexModel {
     public void setFiles(Map<String, IndexEntry> files) {
         this.files = files;
     }
+
 }

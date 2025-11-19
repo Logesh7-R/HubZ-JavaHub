@@ -4,13 +4,15 @@ public class SnapshotInfo {
     private String commit;//commit hash
     private String path;//snapshots/index-100.json
     private String timestamp;//TimeStamp
+    private int commitNumber;
 
     public SnapshotInfo() {}
 
-    public SnapshotInfo(String commit, String path, String timestamp) {
+    public SnapshotInfo(String commit, String path, String timestamp,int commitNumber) {
         this.commit = commit;
         this.path = path;
         this.timestamp = timestamp;
+        this.commitNumber = commitNumber;
     }
 
     public String getCommit() {
@@ -35,5 +37,13 @@ public class SnapshotInfo {
 
     public void setTimestamp(String timestamp) {
         this.timestamp = timestamp;
+    }
+
+    public int getCommitNumber(){
+        return commitNumber;
+    }
+
+    public void setCommitNumber(int commitNumber) {
+        this.commitNumber = commitNumber;
     }
 }

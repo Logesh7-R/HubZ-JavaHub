@@ -11,6 +11,7 @@ import hubz.model.clustermodel.SnapshotInfo;
 import hubz.model.commitmodel.CommitModel;
 import hubz.model.indexmodel.IndexModel;
 import hubz.model.metamodel.MetaModel;
+import hubz.model.resetmodel.ResetStackModel;
 import hubz.model.treemodel.TreeEntry;
 import hubz.model.treemodel.TreeModel;
 import hubz.io.FileManager;
@@ -29,7 +30,7 @@ public class CommitService {
             throw new InvalidCommitMessageException("Commit message cannot be empty. (CommitService -> commit)");
         }
 
-        //Check whether root dir is exist or not
+        //Check whether root dir is exsist or not
         File rootDir = HubzContext.getRootDir();
         if(rootDir ==null || !HubzContext.isInitialized()){
             throw new RepositoryNotFoundException("Base directory not set. Use 'reset' or restart HubZ to choose one. " +
@@ -91,8 +92,12 @@ public class CommitService {
                 newIndex.getFiles().get(path).setHash(newBlobHash);
 
                 String oldBlobHash = oldIndex.getFiles().get(path).getHash();
-                blobs.put(path,new TreeEntry(oldBlobHash,newBlobHash));
+                blobs.put(path,new TreeEntry(oldBlobHash,
+                        newBlobHash));
+                blobs.get(path).setSize(newIndex.getFiles().get(path).getSize());
+                blobs.get(path).setMtime(newIndex.getFiles().get(path).getMtime());
             }
+
 
             //Storing deleted file and its hash in blob itself
             for(String path : deleted.keySet()){
@@ -157,10 +162,16 @@ public class CommitService {
                     cluster = new ClusterModel();
                 }
 
-                SnapshotInfo si = new SnapshotInfo(commitHash, snapshotRelPath, TimeUtil.getCurrentTimestamp());
+                SnapshotInfo si = new SnapshotInfo(commitHash, snapshotRelPath, TimeUtil.getCurrentTimestamp(), meta.getCommitCount());
                 cluster.getSnapshots().add(si);
 
                 JsonSerializer.saveCluster(cluster);
+
+                //To erase all reset stack after commit
+                ResetStackModel resetStackModel = new ResetStackModel();
+                resetStackModel.setEmptyResetStack();
+                resetStackModel.setEmptyTerminatedSnapshot();
+                JsonSerializer.saveResetStack(resetStackModel);
             }
 
             return new OperationResult(true,

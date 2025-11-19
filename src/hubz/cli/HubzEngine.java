@@ -243,9 +243,17 @@ public class HubzEngine {
                 break;
 
             case SUCCESS:
-                printer.success("Revert prepared successfully for commit: " + result.getTargetCommit());
-                printer.printChangedFiles(result.getChangedFiles());
-                printer.info("Run:commit Revert to " + result.getTargetCommit());
+                if(!result.getChangedFiles().isEmpty()) {
+                    printer.success("Revert prepared successfully for commit: " + result.getTargetCommit());
+                    printer.printChangedFiles(result.getChangedFiles());
+                }
+                OperationResult commitResult =new CommitOperation().execute("Reverted the commit: " + result.getTargetCommit());
+                if(commitResult.isSuccess()){
+                    printer.info(commitResult.getMessage());
+                }
+                else{
+                    printer.warn(commitResult.getMessage());
+                }
                 break;
 
             case CONFLICT:

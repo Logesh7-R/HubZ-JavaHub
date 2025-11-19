@@ -3,14 +3,13 @@ package hubz.core.service.initservice;
 import hubz.context.HubzContext;
 import hubz.core.exception.RepositoryInitException;
 import hubz.io.FileManager;
-import hubz.io.JsonSerializer;
 import hubz.model.metamodel.MetaModel;
+import hubz.model.resetmodel.ResetStackModel;
 import hubz.util.HubzPath;
 import hubz.util.JsonUtil;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 
 public class RepoInitializer {
 
@@ -39,6 +38,10 @@ public class RepoInitializer {
 
             FileManager.createFile(new File(rootDir, HubzPath.META_FILE).getAbsolutePath(), JsonUtil.toJson(meta));
 
+            ResetStackModel resetStackModel = new ResetStackModel();
+            resetStackModel.setEmptyResetStack();
+            resetStackModel.setEmptyTerminatedSnapshot();
+            FileManager.createFile(new File(rootDir, HubzPath.RESET_STACK_FILE).getAbsolutePath(),JsonUtil.toJson(resetStackModel));
             FileManager.createFile(new File(rootDir, HubzPath.HEAD_FILE).getAbsolutePath(), "ref: refs" + File.separator + "branches" + File.separator + "main");
             FileManager.createFile(base + File.separator + "refs" + File.separator + "branches" + File.separator + "main", "");
 

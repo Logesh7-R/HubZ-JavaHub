@@ -1,5 +1,7 @@
 package hubz.util;
 
+import hubz.context.HubzContext;
+
 import java.io.File;
 
 //.hubz folder structure
@@ -23,12 +25,33 @@ public class HubzPath {
     public static final String INDEX_FILE = HUBZ_DIR + File.separator + "index.json";
     public static final String CLUSTER_FILE = HUBZ_DIR + File.separator + "cluster.json";
     public static final String META_FILE = HUBZ_DIR + File.separator + "meta.json";
+    public static final String RESET_STACK_FILE = HUBZ_DIR + File.separator + "reset-stack.json";
 
     public static final String SNAPSHOTS_DIR = HUBZ_DIR + File.separator + "snapshots";
     public static final String TEMP_DIR = HUBZ_DIR + File.separator + "temp";
 
     //Used to get snapshotFile name
     public static String getSnapshotFileName(int commitCount) {
-        return SNAPSHOTS_DIR + File.separator + "index-" + commitCount + ".json";
+        return SNAPSHOTS_DIR + File.separator +  "index-"+commitCount +".json";
+    }
+
+    public static File getCommitFilePath(String commitHash){
+        return new File(HubzContext.getRootDir(),COMMITS_DIR+File.separator+commitHash+".json");
+    }
+
+    public static File getTreeFilePath(String treeHash){
+        return new File(HubzContext.getRootDir(),TREES_DIR+treeHash+".json");
+    }
+
+    public static File getIndexFilePath(){
+        return new File(HubzContext.getRootDir(),INDEX_FILE);
+    }
+
+    public static File getBlobFilePath(String blobHash){
+        return new File(HubzContext.getRootDir(), HubzPath.BLOBS_DIR +File.separator+ blobHash + ".txt");
+    }
+
+    public static File getResetStackFilePath(){
+        return new File(HubzContext.getRootDir(), RESET_STACK_FILE);
     }
 }

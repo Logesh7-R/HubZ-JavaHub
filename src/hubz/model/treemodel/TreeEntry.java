@@ -6,12 +6,21 @@ package hubz.model.treemodel;
 public class TreeEntry {
     private String oldBlob;
     private String newBlob;
+    private long size;     // file size in bytes
+    private long mtime;    // last modified time
 
     public TreeEntry(){}
 
     public TreeEntry(String oldBlobHash, String newBlobHash){
         this.oldBlob = oldBlobHash;
         this.newBlob = newBlobHash;
+    }
+
+    public TreeEntry(String oldBlobHash, String newBlobHash,long size, long mtime){
+        this.oldBlob = oldBlobHash;
+        this.newBlob = newBlobHash;
+        this.size = size;
+        this.mtime = mtime;
     }
 
     public String getOldBlob(){
@@ -58,5 +67,21 @@ public class TreeEntry {
 
     public boolean isModified() {
         return oldBlob != null && newBlob != null && !oldBlob.equals(newBlob);
+    }
+
+    public long getSize() {
+        return size;
+    }
+
+    public void setSize(long size) {
+        this.size = size;
+    }
+
+    public long getMtime() {
+        return mtime;
+    }
+
+    public void setMtime(long mtime) {
+        this.mtime = mtime;
     }
 }

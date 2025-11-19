@@ -42,12 +42,17 @@ public class FileManager {
                 new InputStreamReader(new FileInputStream(filePath)))) {
 
             String line;
+            boolean firstLine = true;
+
             while ((line = reader.readLine()) != null) {
+                if (!firstLine) {
+                    content.append(System.lineSeparator());
+                } else {
+                    firstLine = false;
+                }
                 content.append(line);
-                content.append(System.lineSeparator());
             }
         }
-
         return content.toString();
     }
 
