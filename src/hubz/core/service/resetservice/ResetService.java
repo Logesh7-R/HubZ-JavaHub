@@ -14,7 +14,6 @@ import hubz.util.HubzPath;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -68,27 +67,21 @@ public class ResetService {
 
         JsonSerializer.saveIndex(targetIndex);
 
-        File branchRefFile = new File(HubzContext.getRootDir(), helper.getBranchPath());
-
         ResetStackModel resetStackModel = JsonSerializer.readJsonFile(new File(rootDir,
                         HubzPath.RESET_STACK_FILE), ResetStackModel.class);
 
         if(resetMode.equalsIgnoreCase("undo")){
-            FileManager.writeFile(branchRefFile.getAbsolutePath(),resetStackModel.getMainHeadCommitHashForUndo());
             resetStackModel.popResetStackElement();
         }
         else{
             String headCommitHash = helper.getHeadCommitHash();
-            Map<String,String> resetStackElement = new LinkedHashMap<>();
-            resetStackElement.put(headCommitHash, resetMode);
-            resetStackModel.addResetStackElement(resetStackElement);
+            resetStackModel.addResetStackElement(headCommitHash,resetMode);
         }
-        List<String> terminatedSnapshotList = new ArrayList<>();
-        helper.setTerminatedSnapshotPath(targetCommitHash,terminatedSnapshotList);
-
-        FileManager.writeFile(branchRefFile.getAbsolutePath(), targetCommitHash);
 
         JsonSerializer.saveResetStack(resetStackModel);
+
+        File branchRefFile = new File(HubzContext.getRootDir(), helper.getBranchPath());
+        FileManager.writeFile(branchRefFile.getAbsolutePath(), targetCommitHash);
         return new OperationResult(true, "Reset soft successful");
     }
 

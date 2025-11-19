@@ -123,12 +123,8 @@ public class RepositoryHelper {
 
     //Traversing graph from head
     public List<String> traverseGraphFromHead() throws IOException, RepositoryNotFoundException {
-        File graphFile = new File(HubzContext.getRootDir(), HubzPath.GRAPH_FILE);
 
-        String json = FileManager.readFile(graphFile.getAbsolutePath());
-        Type type = new TypeToken<LinkedHashMap<String, List<String>>>(){}.getType();
-
-        LinkedHashMap<String, List<String>> graph = JsonUtil.fromJson(json, type);
+        Map<String, List<String>> graph = loadGraph();
         if (graph == null) return Collections.emptyList();
 
         String head = getHeadCommitHash();
@@ -267,10 +263,8 @@ public class RepositoryHelper {
             return null;
         }
 
-        File targetCommitFile = HubzPath.getCommitFilePath(targetCommitHash);
-        CommitModel targetCommit = JsonSerializer.readJsonFile(targetCommitFile, CommitModel.class);
-        SnapshotInfo nearestSnapShot = getNearestSnapShot(targetCommit);
-        List<String> graphPaths = getShortestPath(targetCommitHash,nearestSnapShot.getCommit());
+        SnapshotInfo nearestSnapShot = getNearestSnapShot(targetCommitHash);
+        List<String> graphPaths = getShortestPath(targetCommitHash,nearestSnapShot.getCommitHash());
         IndexModel targetIndex = JsonSerializer.readJsonFile(new File(nearestSnapShot.getPath()), IndexModel.class);
         Map<String, IndexEntry> targetFileStructure = targetIndex.getFiles();
         for(String commitHash : graphPaths){
@@ -298,39 +292,59 @@ public class RepositoryHelper {
         return targetIndex;
     }
 
-    public SnapshotInfo getNearestSnapShot(CommitModel targetCommit) throws IOException {
-        int targetCommitNumber = targetCommit.getCommitNumber();
-        SnapshotInfo nearestSnapShot = null;
-        ClusterModel cluster;
-        File clusterFile = new File(HubzContext.getRootDir(), HubzPath.CLUSTER_FILE);
-        if (FileManager.exists(clusterFile.getAbsolutePath())) {
-            cluster = JsonSerializer.readJsonFile(clusterFile, ClusterModel.class);
-            if (cluster == null) cluster = new ClusterModel();
-        } else {
-            cluster = new ClusterModel();
-        }
-
-        for(SnapshotInfo si : cluster.getSnapshots()){
-            if(nearestSnapShot==null){
-                nearestSnapShot =si;
-            }else{
-                if(si.getCommitNumber()<=targetCommitNumber){
-                    if(nearestSnapShot.getCommitNumber()>si.getCommitNumber()){
-                        nearestSnapShot = si;
-                    }
-                }
-            }
-        }
-        return nearestSnapShot;
-    }
-
-    public List<String> getShortestPath(String startHash,String targetHash) throws IOException {
+    public Map<String,List<String>> loadGraph() throws IOException {
         File graphFile = new File(HubzContext.getRootDir(), HubzPath.GRAPH_FILE);
 
         String json = FileManager.readFile(graphFile.getAbsolutePath());
         Type type = new TypeToken<LinkedHashMap<String, List<String>>>(){}.getType();
 
         LinkedHashMap<String, List<String>> graph = JsonUtil.fromJson(json, type);
+        return graph;
+    }
+
+    public SnapshotInfo getNearestSnapShot(String targetCommitHash) throws IOException {
+        Map<String,List<String>> graph = loadGraph();
+        if (graph == null) return null;
+
+        String snapCommitHash = null;
+
+        Queue<String> queue = new ArrayDeque<>();
+        queue.add(targetCommitHash);
+
+        while (!queue.isEmpty()) {
+            String current = queue.poll();
+            if (current == null) continue;
+
+           CommitModel queueCurrentCommitModel = JsonSerializer.readJsonFile(HubzPath.getCommitFilePath(current),CommitModel.class);
+           int commitNumber = queueCurrentCommitModel.getCommitNumber();
+           if(commitNumber==1 || commitNumber%25==0){
+               snapCommitHash = current;
+               break;
+           }
+
+            List<String> children = graph.get(current);
+            if (children != null) {
+                queue.addAll(children);
+            }
+        }
+        if(snapCommitHash==null){
+            return null;
+        }
+        ClusterModel clusterModel = JsonSerializer.readJsonFile(HubzPath.getClusterFilePath(),ClusterModel.class);
+        List<SnapshotInfo> snapshotInfoList = clusterModel.getSnapshots();
+        SnapshotInfo snapshotInfo = null;
+        for(SnapshotInfo si : snapshotInfoList){
+            if(si.getCommitHash().equals(snapCommitHash)){
+                snapshotInfo = si;
+                break;
+            }
+        }
+        return snapshotInfo;
+    }
+
+    public List<String> getShortestPath(String startHash,String targetHash) throws IOException {
+
+        Map<String, List<String>> graph = loadGraph();
         if (graph == null) return Collections.emptyList();
 
         if (startHash.equals(targetHash)) {
@@ -423,26 +437,4 @@ public class RepositoryHelper {
             FileManager.deleteFileAndCleanParents(workingFile);
         }
     }
-
-    public void setTerminatedSnapshotPath(String targetCommitHash, List<String> terminatedSnapshotPath) throws RepositoryNotFoundException, IOException {
-        String currentCommitHash = getHeadCommitHash();
-        File currentCommitPath = HubzPath.getCommitFilePath(currentCommitHash);
-        CommitModel currentCommitModel = JsonSerializer.readJsonFile(currentCommitPath, CommitModel.class);
-
-        File targetCommitPath = HubzPath.getCommitFilePath(targetCommitHash);
-        CommitModel targetCommitModel = JsonSerializer.readJsonFile(targetCommitPath, CommitModel.class);
-
-        int tmp1 = (targetCommitModel.getCommitNumber()+1)/50;
-        int tmp2 = (currentCommitModel.getCommitNumber()-1)/50;
-
-        int start = Math.min(tmp1, tmp2);
-        int end = Math.max(tmp1,tmp2);
-
-        for(int i = start;i<=end;i++){
-            if(i!=0){
-                terminatedSnapshotPath.add(HubzPath.getSnapshotFileName(i*50));
-            }
-        }
-    }
 }
-

@@ -5,51 +5,33 @@ import hubz.core.exception.ResetUndoNotAvailableException;
 import java.util.*;
 
 public class ResetStackModel {
-    private Deque<Map<String,String>> resetStack; //Commit hash -> Reset mode
-    private List<String> terminatedSnapshot; //Snapshot which become unreachable -> Path
+    private Deque<List<String>> resetStack; //Commit hash -> Reset mode
 
     public ResetStackModel(){ }
 
-     public ResetStackModel(Deque<Map<String,String>> resetStack, List<String> terminatedSnapshot) {
+     public ResetStackModel(Deque<List<String>> resetStack) {
         this.resetStack = resetStack;
-        this.terminatedSnapshot = terminatedSnapshot;
      }
 
      public List<String> popResetStackElement(){
         if (resetStack.isEmpty()){
             throw new ResetUndoNotAvailableException("Not have enough reset");
         }
-        Map<String,String> resetStackElement = resetStack.pop();
-        List<String> commitHashAndMode =new LinkedList<>();
-        for(Map.Entry<String,String> entry : resetStackElement.entrySet()){
-            commitHashAndMode.add(entry.getKey());
-            commitHashAndMode.add(entry.getValue());
-        }
-        return commitHashAndMode;
+        return resetStack.pop();
     }
 
-
-    public void addTerminatedSnapshot(String snapshotPath){
-        terminatedSnapshot.add(snapshotPath);
-    }
-
-    public List<String>getTerminatedSnapshot(){
-        return  terminatedSnapshot;
-    }
-
-    public void setTerminatedSnapshot(List<String> terminatedSnapshot){
-        this.terminatedSnapshot = terminatedSnapshot;
-    }
-
-    public void addResetStackElement(Map<String,String> element){
+    public void addResetStackElement(String commitHash, String resetMode){
+        List<String> element = new ArrayList<>();
+        element.add(commitHash);
+        element.add(resetMode);
         this.resetStack.push(element);
     }
 
-    public Deque<Map<String,String>> getResetStack(){
+    public Deque<List<String>> getResetStack(){
         return resetStack;
     }
 
-    public void setResetStack(Deque<Map<String,String>> resetStack){
+    public void setResetStack(Deque<List<String>> resetStack){
         this.resetStack = resetStack;
     }
 
@@ -57,16 +39,11 @@ public class ResetStackModel {
         this.resetStack = new ArrayDeque<>();
     }
 
-    public void setEmptyTerminatedSnapshot(){
-        terminatedSnapshot = new ArrayList<>();
-    }
-
     public String getMainHeadCommitHashForUndo(){
-        Map<String,String> mainHead = resetStack.peekLast();
-        String mainHeadHash = null;
-        for(Map.Entry<String,String> entry : mainHead.entrySet()){
-            mainHeadHash = entry.getKey();
+        List<String> mainHead = resetStack.peekLast();
+        if(mainHead==null){
+            return null;
         }
-        return mainHeadHash;
+        return mainHead.getFirst();
     }
 }

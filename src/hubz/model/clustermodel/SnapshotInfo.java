@@ -1,26 +1,26 @@
 package hubz.model.clustermodel;
 
 public class SnapshotInfo {
-    private String commit;//commit hash
+    private String commitHash;//commit hash
     private String path;//snapshots/index-100.json
     private String timestamp;//TimeStamp
     private int commitNumber;
 
     public SnapshotInfo() {}
 
-    public SnapshotInfo(String commit, String path, String timestamp,int commitNumber) {
-        this.commit = commit;
+    public SnapshotInfo(String commitHash, String path, String timestamp, int commitNumber) {
+        this.commitHash = commitHash;
         this.path = path;
         this.timestamp = timestamp;
         this.commitNumber = commitNumber;
     }
 
-    public String getCommit() {
-        return commit;
+    public String getCommitHash() {
+        return commitHash;
     }
 
-    public void setCommit(String commit) {
-        this.commit = commit;
+    public void setCommitHash(String commitHash) {
+        this.commitHash = commitHash;
     }
 
     public String getPath() {

@@ -54,4 +54,8 @@ public class HubzPath {
     public static File getResetStackFilePath(){
         return new File(HubzContext.getRootDir(), RESET_STACK_FILE);
     }
+
+    public static File getClusterFilePath(){
+        return new File(HubzContext.getRootDir(),CLUSTER_FILE);
+    }
 }

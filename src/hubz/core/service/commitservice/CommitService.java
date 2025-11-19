@@ -145,7 +145,7 @@ public class CommitService {
             JsonSerializer.saveIndex(newIndex);
 
             //Storing snapshot of entire folder structure or index file for every 50 commits
-            if (commitNumber % 50 == 0 || commitNumber==1) {
+            if (commitNumber % 25 == 0 || commitNumber==1) {
                 //Getting snapshot file path
                 String snapshotRelPath = HubzPath.getSnapshotFileName(commitNumber);
                 File snapshotFile = new File(rootDir, snapshotRelPath);
@@ -166,13 +166,12 @@ public class CommitService {
                 cluster.getSnapshots().add(si);
 
                 JsonSerializer.saveCluster(cluster);
-
-                //To erase all reset stack after commit
-                ResetStackModel resetStackModel = new ResetStackModel();
-                resetStackModel.setEmptyResetStack();
-                resetStackModel.setEmptyTerminatedSnapshot();
-                JsonSerializer.saveResetStack(resetStackModel);
             }
+
+            //To erase all reset stack after commit
+            ResetStackModel resetStackModel = new ResetStackModel();
+            resetStackModel.setEmptyResetStack();
+            JsonSerializer.saveResetStack(resetStackModel);
 
             return new OperationResult(true,
                     "Commit " + commit.getCommitNumber() + " created successfully!\n" +

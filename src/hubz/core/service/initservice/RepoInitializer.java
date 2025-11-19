@@ -40,7 +40,6 @@ public class RepoInitializer {
 
             ResetStackModel resetStackModel = new ResetStackModel();
             resetStackModel.setEmptyResetStack();
-            resetStackModel.setEmptyTerminatedSnapshot();
             FileManager.createFile(new File(rootDir, HubzPath.RESET_STACK_FILE).getAbsolutePath(),JsonUtil.toJson(resetStackModel));
             FileManager.createFile(new File(rootDir, HubzPath.HEAD_FILE).getAbsolutePath(), "ref: refs" + File.separator + "branches" + File.separator + "main");
             FileManager.createFile(base + File.separator + "refs" + File.separator + "branches" + File.separator + "main", "");
