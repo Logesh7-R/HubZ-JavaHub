@@ -170,7 +170,7 @@ public class CommitService {
 
             //To erase all reset stack after commit
             ResetStackModel resetStackModel = new ResetStackModel();
-            resetStackModel.setEmptyResetStack();
+            resetStackModel.setResetStack(null);
             JsonSerializer.saveResetStack(resetStackModel);
 
             return new OperationResult(true,

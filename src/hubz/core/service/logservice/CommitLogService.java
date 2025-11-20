@@ -79,9 +79,16 @@ public class CommitLogService {
                     .append("Message: ").append(c.getMessage())
                     .append(RESET).append("\n");
 
-            block.append(CYAN)
-                    .append("-------------------------------------")
-                    .append(RESET).append("\n\n");
+           if(i==count-1){
+               block.append(CYAN)
+                       .append("-------------------------------------")
+                       .append(RESET);
+           }
+           else{
+               block.append(CYAN)
+                       .append("-------------------------------------")
+                       .append(RESET).append("\n");
+           }
 
             output.add(block.toString());
         }

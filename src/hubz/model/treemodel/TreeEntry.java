@@ -84,4 +84,8 @@ public class TreeEntry {
     public void setMtime(long mtime) {
         this.mtime = mtime;
     }
+
+    public String getNewBlob() {
+        return newBlob;
+    }
 }

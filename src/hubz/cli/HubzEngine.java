@@ -54,14 +54,17 @@ public class HubzEngine {
                 operation = new InitOperation();
                 break;
 
-            case "reset":
-                resetRootDirectory();
+            case "switch-root":
+                switchRootDirectory();
                 return;
 
             case "help":
                 operation = new HelpOperation();
                 break;
-
+            case "reset":
+                operation = new ResetOperation();
+                break;
+                
             case "commit":
                 operation = new CommitOperation();
                 break;
@@ -194,7 +197,7 @@ public class HubzEngine {
     }
 
     //Reset root directory at context
-    private void resetRootDirectory() {
+    private void switchRootDirectory() {
         printer.info("Enter a new base/root directory path:");
         printer.prompt();
 

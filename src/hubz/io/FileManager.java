@@ -4,6 +4,7 @@ import hubz.context.HubzContext;
 import hubz.util.HubzPath;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 
 //Handle file and directory CRUD operations
@@ -21,40 +22,31 @@ public class FileManager {
 
     //Create file with specified content
     public static void createFile(String filePath, String content) throws IOException {
-        File file = new File(filePath);
+        Path path = Paths.get(filePath);
 
-        if (!file.exists() && !file.createNewFile()) {
-            throw new IOException("Failed to create file: " + filePath);
+        // Ensure parent directories exist
+        Path parent = path.getParent();
+        if (parent != null) {
+            Files.createDirectories(parent);
         }
 
+        // Create file if missing
+        if (!Files.exists(path)) {
+            Files.createFile(path);
+        }
+
+        // Write only if content is not null
         if (content != null) {
-            try (FileWriter writer = new FileWriter(file)) {
-                writer.write(content);
-            }
+            Files.write(path, content.getBytes(StandardCharsets.UTF_8),
+                    StandardOpenOption.TRUNCATE_EXISTING);
         }
     }
 
     //Buffer reader for files
     public static String readFile(String filePath) throws IOException {
-        StringBuilder content = new StringBuilder();
-
-        try (BufferedReader reader = new BufferedReader(
-                new InputStreamReader(new FileInputStream(filePath)))) {
-
-            String line;
-            boolean firstLine = true;
-
-            while ((line = reader.readLine()) != null) {
-                if (!firstLine) {
-                    content.append(System.lineSeparator());
-                } else {
-                    firstLine = false;
-                }
-                content.append(line);
-            }
-        }
-        return content.toString();
+        return Files.readString(Path.of(filePath));
     }
+
 
     public static void deleteFileAndCleanParents(File file) throws IOException {
         if (file == null) {
@@ -96,9 +88,18 @@ public class FileManager {
     }
 
     public static void writeFile(String filePath, String content) throws IOException {
-        try (FileWriter writer = new FileWriter(filePath)) {
-            writer.write(content);
+        Path path = Paths.get(filePath);
+
+        // Ensure parent directory exists
+        Path parent = path.getParent();
+        if (parent != null) {
+            Files.createDirectories(parent);
         }
+
+        // Overwrite file
+        Files.write(path, content.getBytes(StandardCharsets.UTF_8),
+                StandardOpenOption.CREATE,
+                StandardOpenOption.TRUNCATE_EXISTING);
     }
 
     public static boolean exists(String path) {
@@ -130,7 +131,14 @@ public class FileManager {
                     StandardCopyOption.REPLACE_EXISTING,
                     StandardCopyOption.ATOMIC_MOVE
             );
-        } finally {
+        }catch (AtomicMoveNotSupportedException e){
+            Files.move(
+                    tempFile.toPath(),
+                    target.toPath(),
+                    StandardCopyOption.REPLACE_EXISTING
+            );
+        }
+        finally {
             if (tempFile.exists()) {
                 tempFile.delete();
             }

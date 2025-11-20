@@ -40,7 +40,7 @@ public class HubzPath {
     }
 
     public static File getTreeFilePath(String treeHash){
-        return new File(HubzContext.getRootDir(),TREES_DIR+treeHash+".json");
+        return new File(HubzContext.getRootDir(),TREES_DIR+File.separator + treeHash+".json");
     }
 
     public static File getIndexFilePath(){
@@ -57,5 +57,13 @@ public class HubzPath {
 
     public static File getClusterFilePath(){
         return new File(HubzContext.getRootDir(),CLUSTER_FILE);
+    }
+
+    public static File getSnapshotFilePath(String snapshotPath){
+        return new File(HubzContext.getRootDir(),snapshotPath);
+    }
+
+    public static File getCurrentBranchFilePath(){
+        return new File(HubzContext.getRootDir(),BRANCHES_DIR+File.separator+"main");
     }
 }
