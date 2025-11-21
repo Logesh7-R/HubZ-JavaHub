@@ -22,6 +22,7 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.*;
+import java.util.regex.Pattern;
 
 public class RepositoryHelper {
     public void scanWorkingDirectory(File currentDir, IndexModel index) {
@@ -81,7 +82,7 @@ public class RepositoryHelper {
                         newEntry.setHash(oldFile.getHash());
                     }
                 } else {
-                    // size and mtime same → unchanged
+                    // size and mTime same → unchanged
                     IndexEntry newEntry = newIndex.getFiles().get(path);
                     newEntry.setHash(oldFile.getHash());
                 }
@@ -101,9 +102,10 @@ public class RepositoryHelper {
     public String getCurrentBranchName() throws RepositoryNotFoundException, IOException {
         File headFile = new File(HubzContext.getRootDir(), HubzPath.HEAD_FILE);
         String headContent = FileManager.readFile(headFile.getAbsolutePath()).trim();
-        String currentBranch[] = null;
+        String[] currentBranch = null;
         if (headContent.startsWith("ref:")) {
-            currentBranch = headContent.split(File.separator);
+            String regex = Pattern.quote(File.separator);
+            currentBranch = headContent.split(regex);
         } else {
             throw new RepositoryNotFoundException("Invalid HEAD reference. Please check repository state. " +
                     "(ServiceHelper -> getBranch())");
@@ -397,7 +399,7 @@ public class RepositoryHelper {
             CommitModel cm = JsonSerializer.readJsonFile(HubzPath.getCommitFilePath(cur), CommitModel.class);
             int num = cm.getCommitNumber();
 
-            // If commit number is 1 or divisible of 25 -> It is nearest snapshot
+            // If commit number is 1 or divisible of 25 -> It is the nearest snapshot
             if (num == 1 || num % 25 == 0) {
                 snapshotHash = cur;
                 break;
